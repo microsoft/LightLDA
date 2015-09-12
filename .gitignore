@@ -1,0 +1,4 @@
+bin
+multiverso
+src/*.o
+example/data
