@@ -21,7 +21,7 @@ namespace multiverso { namespace lightlda
 		Barrier* barrier, Meta* meta) : 
         alias_(alias_table), barrier_(barrier), meta_(meta)
     {
-		sampler_ = new LightDocSampler();
+	      sampler_ = new LightDocSampler();
     }
 
     Trainer::~Trainer()
@@ -90,13 +90,10 @@ namespace multiverso { namespace lightlda
         {
             Evaluate(lda_data_block);
             if (TrainerId() == 0)
-            {
                 Log::Info("Rank = %d, Evaluation Time used: %.2f s \n",
                     Multiverso::ProcessRank(), watch.ElapsedSeconds());
-            }
         }
-        if (iter != 0 && iter % 50 == 0)
-            Dump(iter, lda_data_block);
+        // if (iter != 0 && iter % 50 == 0) Dump(iter, lda_data_block);
     }
 
     void Trainer::Evaluate(LDADataBlock* lda_data_block)
