@@ -53,12 +53,11 @@ namespace multiverso { namespace lightlda
          * \return sample proposed from the distribution
          */
         int Propose(int word, xorshift_rng& rng);
-
-        void AliasMultinomialRNG(int32_t size, float mass, int32_t& height,
-            int32_t* kv_vector);
         /*! \brief Clear the alias table */
         void Clear();
     private:
+        void AliasMultinomialRNG(int32_t size, float mass, int32_t& height,
+            int32_t* kv_vector);
         int* memory_block_;
         int64_t memory_size_;
         AliasTableIndex* table_index_;

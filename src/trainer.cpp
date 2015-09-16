@@ -27,6 +27,7 @@ namespace multiverso { namespace lightlda
     Trainer::~Trainer()
     {
         delete sampler_;
+        alias_->Clear();
     }
 
     void Trainer::TrainIteration(DataBlockBase* data_block)

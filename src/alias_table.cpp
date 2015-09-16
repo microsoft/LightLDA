@@ -158,6 +158,31 @@ namespace multiverso { namespace lightlda
         }
     }
 
+    void AliasTable::Clear()
+    {
+        if (q_w_proportion_ != nullptr) 
+        {
+            delete q_w_proportion_;
+            q_w_proportion_ = nullptr;
+        }
+        if (q_w_proportion_int_ != nullptr)
+        {
+            delete q_w_proportion_int_;
+            q_w_proportion_int_ = nullptr;
+        }
+        if (L_ != nullptr) 
+        {
+            delete L_;
+            L_ = nullptr;
+        }
+        if (H_ != nullptr)
+        {
+            delete H_;
+            H_ = nullptr;
+        }
+    }
+
+
     void AliasTable::AliasMultinomialRNG(int32_t size, float mass, int32_t& height,
         int32_t* kv_vector)
     {
