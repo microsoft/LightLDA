@@ -2,7 +2,7 @@
 
 LightLDA is a distributed system for large scale topic modeling. It implements a distributed sampler that enables very large data sizes and models. LightLDA improves sampling throughput and convergence speed via a fast O(1) metropolis-Hastings algorithm, and allows small cluster to tackle very large data and model sizes through model scheduling and data parallelism architecture. LightLDA is implemented with C++ for performance consideration.
 
-We have sucessfully trained big topic models (with trillions of parameters) on big data (Top 10% PageRank values of Bing indexed page, containing billions of documents) in Microsoft. For more technical details, please refer to our [WWW'15 paper](http://www.www2015.it/documents/proceedings/proceedings/p1351.pdf).
+We have sucessfully trained big topic models (with trillions of parameters) on big data (Top 10% PageRank values of Bing indexed page, containing billions of documents) in Microsoft. For more technical details, please refer to our [WWW'15 paper](http://www.www2015.it/documents/proceedings/proceedings/p1351.pdf). For documents, please view website [http://www.dmtk.io](http://www.dmtk.io).
 
 ##Why LightLDA
 
@@ -14,7 +14,8 @@ The highlight features of LightLDA are
 
 ##Quick Start
 
-Run ``` $./build.sh``` to build lightlda.
+Run ``` $ sh build.sh ``` to build lightlda.
+Run ``` $ sh example/nytimes.sh ``` for a simple example.
 
 
 ##Reference
