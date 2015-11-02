@@ -1,3 +1,8 @@
+/*!
+ * \file util.h
+ * \brief Defines random number generator
+ */
+
 #ifndef _LIGHTLDA_UTIL_H_
 #define _LIGHTLDA_UTIL_H_
 

@@ -27,7 +27,6 @@ namespace multiverso { namespace lightlda
     Trainer::~Trainer()
     {
         delete sampler_;
-        alias_->Clear();
     }
 
     void Trainer::TrainIteration(DataBlockBase* data_block)
@@ -95,6 +94,9 @@ namespace multiverso { namespace lightlda
                     Multiverso::ProcessRank(), watch.ElapsedSeconds());
         }
         // if (iter != 0 && iter % 50 == 0) Dump(iter, lda_data_block);
+
+        // Clear the thread information in alias table
+        if (iter == Config::num_iterations - 1) alias_->Clear();
     }
 
     void Trainer::Evaluate(LDADataBlock* lda_data_block)

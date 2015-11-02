@@ -27,7 +27,7 @@ namespace multiverso { namespace lightlda
     {
         if (index_map_[word] == -1)
         {
-            Log::Fatal("Fatal in alias index: word not exist\n");
+            Log::Fatal("Fatal in alias index: word %d not exist\n", word);
         }
         return index_[index_map_[word]];
     }
@@ -72,8 +72,7 @@ namespace multiverso { namespace lightlda
 
             if (!vocab_file.good())
             {
-                printf("open failed\n");
-                exit(1);
+                Log::Fatal("Failed to open file : %s\n", file_name.c_str());
             }
 
             vocab_file.read(reinterpret_cast<char*>(&local_vocab.size_),

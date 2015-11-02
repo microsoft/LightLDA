@@ -1,3 +1,8 @@
+/*!
+ * \file data_block.h
+ * \brief Defines the training data block
+ */
+
 #ifndef _LIGHTLDA_DATA_BLOCK_H_
 #define _LIGHTLDA_DATA_BLOCK_H_
 

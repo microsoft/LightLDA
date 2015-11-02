@@ -1,3 +1,8 @@
+/*!
+ * \file data_stream.h
+ * \brief Defines interface for data access
+ */
+
 #ifndef _LIGHTLDA_DATA_STREAM_H_
 #define _LIGHTLDA_DATA_STREAM_H_
 

@@ -22,10 +22,10 @@ namespace multiverso { namespace lightlda
     std::string Config::input_dir = "";
     bool Config::warm_start = false;
     bool Config::out_of_core = false;
-    int64_t Config::data_capacity = 2000 * kMB;
-    int64_t Config::model_capacity = 1024 * kMB;
-    int64_t Config::delta_capacity = 500 * kMB;
-    int64_t Config::alias_capacity = 1024 * kMB;
+    int64_t Config::data_capacity = 1024 * kMB;
+    int64_t Config::model_capacity = 512 * kMB;
+    int64_t Config::delta_capacity = 256 * kMB;
+    int64_t Config::alias_capacity = 512 * kMB;
     // -- End: Config definitioin and defalut values ----------------------- //
 
     void Config::Init(int argc, char* argv[])

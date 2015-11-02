@@ -42,14 +42,14 @@ namespace multiverso { namespace lightlda
             offset_buffer_ = new int64_t[max_num_document_];
         }
         catch (std::bad_alloc& ba) {
-            Log::Fatal("Bad Alloc caught: %s\n", ba.what());
+            Log::Fatal("Bad Alloc caught: failed memory allocation for offset_buffer in DataBlock\n");
         }
 
         try{
             documents_buffer_ = new int32_t[memory_block_size_];
         }
         catch (std::bad_alloc& ba) {
-            Log::Fatal("Bad Alloc caught: %s\n", ba.what());
+            Log::Fatal("Bad Alloc caught: failed memory allocation for documents_buffer in DataBlock\n");
         }
     }
 
@@ -64,6 +64,10 @@ namespace multiverso { namespace lightlda
         file_name_ = file_name;
 
         std::ifstream block_file(file_name_, std::ios::in | std::ios::binary);
+        if (!block_file.good())
+        {
+            Log::Fatal("Failed to read data %s\n", file_name_.c_str());
+        }
         block_file.read(reinterpret_cast<char*>(&num_document_), sizeof(DocNumber));
 
         if (num_document_ > max_num_document_)
@@ -96,6 +100,12 @@ namespace multiverso { namespace lightlda
         std::string temp_file = file_name_ + ".temp";
 
         std::ofstream block_file(temp_file, std::ios::out | std::ios::binary);
+
+        if (!temp_file.good())
+        {
+            Log::Fatal("Failed to open file %s\n", temp_file.c_str());
+        }
+
         block_file.write(reinterpret_cast<char*>(&num_document_), 
             sizeof(DocNumber));
         block_file.write(reinterpret_cast<char*>(offset_buffer_),
