@@ -159,7 +159,6 @@
     <ClInclude Include="..\..\src\document.h" />
     <ClInclude Include="..\..\src\eval.h" />
     <ClInclude Include="..\..\src\meta.h" />
-    <ClInclude Include="..\..\src\param_loader.h" />
     <ClInclude Include="..\..\src\sampler.h" />
     <ClInclude Include="..\..\src\trainer.h" />
     <ClInclude Include="..\..\src\util.h" />
