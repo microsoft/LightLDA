@@ -101,7 +101,7 @@ namespace multiverso { namespace lightlda
 
         std::ofstream block_file(temp_file, std::ios::out | std::ios::binary);
 
-        if (!temp_file.good())
+        if (!block_file.good())
         {
             Log::Fatal("Failed to open file %s\n", temp_file.c_str());
         }
