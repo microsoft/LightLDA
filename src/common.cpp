@@ -46,7 +46,7 @@ namespace multiverso { namespace lightlda
             if (strcmp(argv[i], "-mh_steps") == 0) mh_steps = atoi(argv[i + 1]);
             if (strcmp(argv[i], "-num_servers") == 0) num_servers = atoi(argv[i + 1]);
             if (strcmp(argv[i], "-num_local_workers") == 0) num_local_workers = atoi(argv[i + 1]);
-            if (strcmp(argv[i], "-num_aggregator") == 0) num_local_workers = atoi(argv[i + 1]);
+            if (strcmp(argv[i], "-num_aggregator") == 0) num_aggregator = atoi(argv[i + 1]);
             if (strcmp(argv[i], "-num_blocks") == 0) num_blocks = atoi(argv[i + 1]);
             if (strcmp(argv[i], "-max_num_document") == 0) max_num_document = atoll(argv[i + 1]);
             if (strcmp(argv[i], "-alpha") == 0) alpha = static_cast<float>(atof(argv[i + 1]));
