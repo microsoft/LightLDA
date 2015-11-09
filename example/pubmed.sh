@@ -20,4 +20,4 @@ python $root/text2libsvm.py $dir/docword.pubmed.txt $dir/vocab.pubmed.txt $dir/p
 $bin/dump_binary $dir/pubmed.libsvm $dir/pubmed.word_id.dict $dir 0
 
 # 4. Run LightLDA
-$bin/lightlda -num_vocabs 144400 -num_topics 1000 -num_iterations 100 -alpha 0.1 -beta 0.01 -mh_steps 4 -num_local_workers 1 -num_blocks 1 -max_num_document 8300000 -input_dir $dir -data_capacity 6200
+$bin/lightlda -num_vocabs 144400 -num_topics 1000 -num_iterations 100 -alpha 0.1 -beta 0.01 -mh_steps 2 -num_local_workers 1 -num_blocks 1 -max_num_document 8300000 -input_dir $dir -data_capacity 6200
