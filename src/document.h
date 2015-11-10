@@ -3,8 +3,8 @@
  * \brief Defines Document data structure
  */
 
-#ifndef _LIGHTLDA_DOCUMENT_H_
-#define _LIGHTLDA_DOCUMENT_H_
+#ifndef LIGHTLDA_DOCUMENT_H_
+#define LIGHTLDA_DOCUMENT_H_
 
 #include "common.h"
 
@@ -73,4 +73,4 @@ namespace multiverso { namespace lightlda
 } // namespace lightlda
 } // namespace multiverso
 
-#endif // _LIGHTLDA_DOCUMENT_H_
+#endif // LIGHTLDA_DOCUMENT_H_

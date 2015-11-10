@@ -3,8 +3,8 @@
  * \brief This file defines meta information for training dataset
  */
 
-#ifndef _LIGHTLDA_META_H_
-#define _LIGHTLDA_META_H_
+#ifndef LIGHTLDA_META_H_
+#define LIGHTLDA_META_H_
 
 #include <string>
 #include <vector>
@@ -126,4 +126,4 @@ namespace multiverso { namespace lightlda
 } // namespace lightlda
 } // namespace multiverso
 
-#endif // _LIGHTLDA_META_H_
+#endif // LIGHTLDA_META_H_

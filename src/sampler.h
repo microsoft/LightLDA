@@ -3,8 +3,8 @@
  * \brief Defines lightlda samplers
  */
 
-#ifndef _LIGHTLDA_SAMPLER_H_
-#define _LIGHTLDA_SAMPLER_H_
+#ifndef LIGHTLDA_SAMPLER_H_
+#define LIGHTLDA_SAMPLER_H_
 
 #include <memory>
 #include "util.h"
@@ -87,4 +87,4 @@ namespace multiverso { namespace lightlda
 } // namespace lightlda
 } // namespace multiverso
 
-#endif // _LIGHTLDA_SAMPLER_H_
+#endif // LIGHTLDA_SAMPLER_H_

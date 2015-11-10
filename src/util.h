@@ -3,8 +3,8 @@
  * \brief Defines random number generator
  */
 
-#ifndef _LIGHTLDA_UTIL_H_
-#define _LIGHTLDA_UTIL_H_
+#ifndef LIGHTLDA_UTIL_H_
+#define LIGHTLDA_UTIL_H_
 
 #include <ctime>
 
@@ -45,4 +45,4 @@ namespace multiverso { namespace lightlda
 } // namespace lightlda
 } // namespace multiverso
 
-#endif // _LIGHTLDA_UTIL_H_
+#endif // LIGHTLDA_UTIL_H_

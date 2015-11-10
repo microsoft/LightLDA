@@ -3,8 +3,8 @@
  * \brief Defines interface for data access
  */
 
-#ifndef _LIGHTLDA_DATA_STREAM_H_
-#define _LIGHTLDA_DATA_STREAM_H_
+#ifndef LIGHTLDA_DATA_STREAM_H_
+#define LIGHTLDA_DATA_STREAM_H_
 
 namespace multiverso { namespace lightlda 
 {
@@ -31,4 +31,4 @@ namespace multiverso { namespace lightlda
 } // namespace lightlda
 } // namespace multiverso
 
-#endif // _LIGHTLDA_DATA_STREAM_
+#endif // LIGHTLDA_DATA_STREAM_H_

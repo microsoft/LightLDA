@@ -3,8 +3,8 @@
  * \brief Defines common settings in LightLDA
  */
 
-#ifndef _LIGHTLDA_COMMON_H_
-#define _LIGHTLDA_COMMON_H_
+#ifndef LIGHTLDA_COMMON_H_
+#define LIGHTLDA_COMMON_H_
 
 #include <cstdint>
 #include <string>
@@ -76,4 +76,4 @@ namespace multiverso { namespace lightlda
 } // namespace lightlda
 } // namespace multiverso
 
-#endif // _LIGHTLDA_COMMON_H_
+#endif // LIGHTLDA_COMMON_H_

@@ -3,8 +3,8 @@
  * \brief Defines multiverso interface for parameter loading and data training
  */
 
-#ifndef _LIGHTLDA_TRAINER_H_
-#define _LIGHTLDA_TRAINER_H_
+#ifndef LIGHTLDA_TRAINER_H_
+#define LIGHTLDA_TRAINER_H_
 
 #include <mutex>
 
@@ -67,4 +67,4 @@ namespace multiverso { namespace lightlda
 } // namespace lightlda
 } // namespace multiverso
 
-#endif // _LIGHTLDA_TRAINER_H_
+#endif // LIGHTLDA_TRAINER_H_

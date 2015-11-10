@@ -3,8 +3,8 @@
  * \brief Defines alias table
  */
 
-#ifndef _LIGHTLDA_ALIAS_TABLE_H_
-#define _LIGHTLDA_ALIAS_TABLE_H_
+#ifndef LIGHTLDA_ALIAS_TABLE_H_
+#define LIGHTLDA_ALIAS_TABLE_H_
 
 #include <memory>
 #include <mutex>
@@ -86,4 +86,4 @@ namespace multiverso { namespace lightlda
     };
 } // namespace lightlda
 } // namespace multiverso
-#endif // _LIGHTLDA_ALIAS_TABLE_H_
+#endif // LIGHTLDA_ALIAS_TABLE_H_

@@ -3,8 +3,8 @@
  * \brief Defines the training data block
  */
 
-#ifndef _LIGHTLDA_DATA_BLOCK_H_
-#define _LIGHTLDA_DATA_BLOCK_H_
+#ifndef LIGHTLDA_DATA_BLOCK_H_
+#define LIGHTLDA_DATA_BLOCK_H_
 
 #include "common.h"
 
@@ -130,4 +130,4 @@ namespace multiverso { namespace lightlda
 } // namespace lightlda
 } // namespace multiverso
 
-#endif // _LIGHTLDA_DATA_BLOCK_H_
+#endif // LIGHTLDA_DATA_BLOCK_H_

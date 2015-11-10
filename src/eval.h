@@ -3,8 +3,8 @@
 * \brief Defines utility for evaluating likelihood of lda
 */
 
-#ifndef _LIGHTLDA_EVAL_H_
-#define _LIGHTLDA_EVAL_H_
+#ifndef LIGHTLDA_EVAL_H_
+#define LIGHTLDA_EVAL_H_
 
 #include "common.h"
 
@@ -50,4 +50,4 @@ namespace multiverso { namespace lightlda
 } // namespace lightlda
 } // namespace multiverso
 
-#endif // _LIGHTLDA_EVAL_H_
+#endif // LIGHTLDA_EVAL_H_
