@@ -49,8 +49,7 @@ namespace multiverso { namespace lightlda
         {
             for (int32_t j = 0; j < alias_index_[i].size(); ++j)
             {
-                if (alias_index_[i][j] != nullptr)
-                    delete alias_index_[i][j];
+                delete alias_index_[i][j];
             }
         }
     }
