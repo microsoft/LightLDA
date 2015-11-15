@@ -14,7 +14,7 @@ THIRD_PARTY_LIB = $(MULTIVERSO_DIR)/third_party/lib
 
 INC_FLAGS = -I$(MULTIVERSO_INC)
 LD_FLAGS  = -L$(MULTIVERSO_LIB) -lmultiverso
-LD_FLAGS += -L$(THIRD_PARTY_LIB) -lzmq -lmpich -lmpl
+LD_FLAGS += -L$(THIRD_PARTY_LIB) -lzmq -lmpich -lmpl -lpthread
   	  	
 LIGHTLDA_HEADERS = $(shell find $(PROJECT)/src -type f -name "*.h")
 LIGHTLDA_SRC     = $(shell find $(PROJECT)/src -type f -name "*.cpp")
