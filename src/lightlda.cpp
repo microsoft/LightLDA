@@ -7,8 +7,10 @@
 #include "meta.h"
 #include "util.h"
 #include <vector>
+#include <iostream>
 #include <multiverso/barrier.h>
 #include <multiverso/log.h>
+#include <multiverso/row.h>
 
 namespace multiverso { namespace lightlda
 {     
@@ -50,6 +52,8 @@ namespace multiverso { namespace lightlda
                 delete trainer;
             }
             delete param_loader;
+            
+            DumpDocTopic();
 
             delete data_stream;
             delete barrier;
@@ -129,6 +133,31 @@ namespace multiverso { namespace lightlda
                     Multiverso::Flush();
                 }
                 data_stream->EndDataAccess();
+            }
+        }
+
+        static void DumpDocTopic()
+        {
+            Row<int32_t> doc_topic_counter(0, Format::Sparse, kMaxDocLength); 
+            for (int32_t block = 0; block < Config::num_blocks; ++block)
+            {
+                std::ofstream fout("doc_topic." + std::to_string(block));
+                data_stream->BeforeDataAccess();
+                DataBlock& data_block = data_stream->CurrDataBlock();
+                for (int i = 0; i < data_block.Size(); ++i)
+                {
+                    Document* doc = data_block.GetOneDoc(i);
+                    doc_topic_counter.Clear();
+                    doc->GetDocTopicVector(doc_topic_counter);
+                    fout << i << " ";  // doc id
+                    Row<int32_t>::iterator iter = doc_topic_counter.Iterator();
+                    while (iter.HasNext())
+                    {
+                        fout << " " << iter.Key() << ":" << iter.Value();
+                        iter.Next();
+                    }
+                    fout << std::endl;
+                }
             }
         }
 
