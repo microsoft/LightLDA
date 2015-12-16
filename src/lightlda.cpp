@@ -1,5 +1,6 @@
 ﻿#include "common.h"
 #include "trainer.h"
+#include "model.h"
 #include "alias_table.h"
 #include "data_stream.h"
 #include "data_block.h"
@@ -95,9 +96,17 @@ namespace multiverso { namespace lightlda
         static void InitMultiverso()
         {
             Multiverso::BeginConfig();
-            CreateTable();
-            ConfigTable();
-            Initialize();
+            if(!Config::infer)
+            {
+              CreateTable();
+              ConfigTable();
+              Initialize();
+            }
+            else
+            {
+              Model model(&meta);
+              model.Initialize();
+            }
             Multiverso::EndConfig();
         }
 

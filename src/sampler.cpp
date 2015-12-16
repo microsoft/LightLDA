@@ -20,7 +20,7 @@ namespace multiverso { namespace lightlda
         alpha_sum_ = num_topic_ * alpha_;
         beta_sum_ = num_vocab_ * beta_;
 
-        doc_topic_counter_.reset(new Row<int32_t>(0, 
+        doc_topic_counter_.reset(new Row<int32_t>(0,
             multiverso::Format::Sparse, kMaxDocLength));
     }
 
@@ -43,10 +43,13 @@ namespace multiverso { namespace lightlda
                 doc->SetTopic(cursor, new_topic);
                 doc_topic_counter_->Add(old_topic, -1);
                 doc_topic_counter_->Add(new_topic, 1);
-                trainer->Add<int32_t>(kWordTopicTable, word, old_topic, -1);
-                trainer->Add<int64_t>(kSummaryRow, 0, old_topic, -1);
-                trainer->Add<int32_t>(kWordTopicTable, word, new_topic, 1);
-                trainer->Add<int64_t>(kSummaryRow, 0, new_topic, 1);
+                if(!Config::infer)
+                {
+                  trainer->Add<int32_t>(kWordTopicTable, word, old_topic, -1);
+                  trainer->Add<int64_t>(kSummaryRow, 0, old_topic, -1);
+                  trainer->Add<int32_t>(kWordTopicTable, word, new_topic, 1);
+                  trainer->Add<int64_t>(kSummaryRow, 0, new_topic, 1);
+                }
             }
             ++num_tokens;
         }
@@ -185,7 +188,7 @@ namespace multiverso { namespace lightlda
         float nominator, denominator;
         double rejection, pi;
         int32_t m, t;
-        Row<int32_t>& word_topic_row = 
+        Row<int32_t>& word_topic_row =
             trainer->GetRow<int32_t>(kWordTopicTable, word);
         Row<int64_t>& summary_row =
             trainer->GetRow<int64_t>(kSummaryRow, 0);

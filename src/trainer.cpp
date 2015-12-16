@@ -50,23 +50,26 @@ namespace multiverso { namespace lightlda
                 Multiverso::ProcessRank(), lda_data_block->iteration(),
                 lda_data_block->block(), lda_data_block->slice());
         }
-        // Build Alias table
-        if (id == 0) alias_->Init(meta_->alias_index(block, slice));
-        barrier_->Wait();
-        for (const int32_t* pword = local_vocab.begin(slice) + id;
-            pword < local_vocab.end(slice);
-            pword += trainer_num)
-        {
-            alias_->Build(*pword, this);
-        }
-        if (id == 0) alias_->Build(-1, this);
-        barrier_->Wait();
+        // Build Alias table when training or first iteration for inference
+	if(!Config::infer || iter == 0)
+	{
+            if (id == 0) alias_->Init(meta_->alias_index(block, slice));
+	    barrier_->Wait();
+	    for (const int32_t* pword = local_vocab.begin(slice) + id;
+                 pword < local_vocab.end(slice);
+                 pword += trainer_num)
+	    {
+                alias_->Build(*pword, this);
+	    }
+	    if (id == 0) alias_->Build(-1, this);
+	    barrier_->Wait();
 
-        if (TrainerId() == 0)
-        {
-            Log::Info("Rank = %d, Alias Time used: %.2f s \n",
+	    if (TrainerId() == 0)
+	    {
+                Log::Info("Rank = %d, Alias Time used: %.2f s \n",
                 Multiverso::ProcessRank(), watch.ElapsedSeconds());
-        }
+	    }
+	}
         int32_t num_token = 0;
         watch.Restart();
         // Train with lightlda sampler
