@@ -92,12 +92,12 @@ namespace multiverso { namespace lightlda
       {
         if(!regexec(&model_wordtopic_regex, ent->d_name, 0, NULL, 0))
         {
-          Log::Info("loading word topic model[%s]\n", ent->d_name);
+          Log::Info("loading word topic table[%s]\n", ent->d_name);
           LoadWordTopicTable(Config::input_dir + "/" + ent->d_name);
         }
         else if(!regexec(&model_summary_regex, ent->d_name, 0, NULL, 0))
         {
-          Log::Info("loading summary model[%s]\n", ent->d_name);
+          Log::Info("loading summary table[%s]\n", ent->d_name);
           LoadSummaryTable(Config::input_dir + "/" + ent->d_name);
         }
       }
