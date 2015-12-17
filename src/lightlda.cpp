@@ -100,13 +100,12 @@ namespace multiverso { namespace lightlda
             {
               CreateTable();
               ConfigTable();
-              Initialize();
             }
             else
             {
-              Model model(&meta);
-              model.Initialize();
+              Model::Initialize(&meta);
             }
+            Initialize();
             Multiverso::EndConfig();
         }
 
@@ -133,10 +132,13 @@ namespace multiverso { namespace lightlda
                             if (!Config::warm_start)
                                 doc->SetTopic(cursor, rng.rand_k(Config::num_topics));
                             // Init the server table
-                            Multiverso::AddToServer<int32_t>(kWordTopicTable,
-                                doc->Word(cursor), doc->Topic(cursor), 1);
-                            Multiverso::AddToServer<int64_t>(kSummaryRow,
-                                0, doc->Topic(cursor), 1);
+                            if(!Config::infer)
+                            {
+                                Multiverso::AddToServer<int32_t>(kWordTopicTable,
+                                    doc->Word(cursor), doc->Topic(cursor), 1);
+                                Multiverso::AddToServer<int64_t>(kSummaryRow,
+                                    0, doc->Topic(cursor), 1);
+                            }
                         }
                     }
                     Multiverso::Flush();

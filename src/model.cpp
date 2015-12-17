@@ -8,10 +8,10 @@
 
 namespace multiverso { namespace lightlda
 {
-  void Model::Initialize()
+  void Model::Initialize(Meta * meta)
   {
     CreateTable();
-    ConfigTable();
+    ConfigTable(meta);
     LoadTables();
   }
 
@@ -32,16 +32,16 @@ namespace multiverso { namespace lightlda
         longlong_type, dense_format);
   }
 
-  void Model::ConfigTable()
+  void Model::ConfigTable(Meta * meta)
   {
 
     multiverso::Format dense_format = multiverso::Format::Dense;
     multiverso::Format sparse_format = multiverso::Format::Sparse;
     for (int32_t word = 0; word < Config::num_vocabs; ++word)
     {
-        if (meta_->tf(word) > 0)
+        if (meta->tf(word) > 0)
         {
-            if (meta_->tf(word) * kLoadFactor > Config::num_topics)
+            if (meta->tf(word) * kLoadFactor > Config::num_topics)
             {
                 Multiverso::SetServerRow(kWordTopicTable,
                     word, dense_format, Config::num_topics);
@@ -51,19 +51,19 @@ namespace multiverso { namespace lightlda
             else
             {
                 Multiverso::SetServerRow(kWordTopicTable,
-                    word, sparse_format, meta_->tf(word) * kLoadFactor);
+                    word, sparse_format, meta->tf(word) * kLoadFactor);
                 Multiverso::SetCacheRow(kWordTopicTable,
-                    word, sparse_format, meta_->tf(word) * kLoadFactor);
+                    word, sparse_format, meta->tf(word) * kLoadFactor);
             }
         }
-        if (meta_->local_tf(word) > 0)
+        if (meta->local_tf(word) > 0)
         {
-            if (meta_->local_tf(word) * 2 * kLoadFactor > Config::num_topics)
+            if (meta->local_tf(word) * 2 * kLoadFactor > Config::num_topics)
                 Multiverso::SetAggregatorRow(kWordTopicTable,
                     word, dense_format, Config::num_topics);
             else
                 Multiverso::SetAggregatorRow(kWordTopicTable, word,
-                    sparse_format, meta_->local_tf(word) * 2 * kLoadFactor);
+                    sparse_format, meta->local_tf(word) * 2 * kLoadFactor);
         }
     }
   }

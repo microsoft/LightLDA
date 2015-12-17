@@ -18,16 +18,14 @@ namespace multiverso { namespace lightlda
   class Model
   {
   public:
-    Model(Meta * meta): meta_(meta) {}
-    void Initialize();
+    static void Initialize(Meta * meta);
   private:
-    void CreateTable();
-    void ConfigTable();
-    void LoadTables();
-    void LoadWordTopicTable(const std::string& model_fname);
-    void LoadSummaryTable(const std::string& model_fname);
-  private:
-    Meta * meta_;
+    static void CreateTable();
+    static void ConfigTable(Meta * meta);
+    static void LoadTables();
+    static void LoadWordTopicTable(const std::string& model_fname);
+    static void LoadSummaryTable(const std::string& model_fname);
+
   };
 } // namespace lightlda
 } // namespace multiverso
