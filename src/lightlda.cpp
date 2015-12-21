@@ -158,6 +158,7 @@ namespace multiverso { namespace lightlda
                     }
                     fout << std::endl;
                 }
+                data_stream->EndDataAccess();
             }
         }
 
