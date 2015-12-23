@@ -50,24 +50,23 @@ namespace multiverso { namespace lightlda
                 Multiverso::ProcessRank(), lda_data_block->iteration(),
                 lda_data_block->block(), lda_data_block->slice());
         }
-        //Build Alias table
+        // Build Alias table
         if (id == 0) alias_->Init(meta_->alias_index(block, slice));
         barrier_->Wait();
         for (const int32_t* pword = local_vocab.begin(slice) + id;
-                 pword < local_vocab.end(slice);
-                 pword += trainer_num)
+            pword < local_vocab.end(slice);
+            pword += trainer_num)
         {
-                alias_->Build(*pword, this);
+            alias_->Build(*pword, this);
         }
         if (id == 0) alias_->Build(-1, this);
         barrier_->Wait();
 
         if (TrainerId() == 0)
         {
-                Log::Info("Rank = %d, Alias Time used: %.2f s \n",
+            Log::Info("Rank = %d, Alias Time used: %.2f s \n",
                 Multiverso::ProcessRank(), watch.ElapsedSeconds());
         }
-        
         int32_t num_token = 0;
         watch.Restart();
         // Train with lightlda sampler
@@ -180,6 +179,26 @@ namespace multiverso { namespace lightlda
         }
 
         fout.close();
+    }
+
+    Row<int32_t>& Trainer::GetWordTopicRow(integer_t word_id)
+    {
+        return GetRow<int32_t>(kWordTopicTable, word_id);
+    }
+
+    void Trainer::UpdateWordTopic(integer_t word_id, integer_t topic_id, int32_t delta)
+    {
+        Add<int32_t>(kWordTopicTable, word_id, topic_id, delta);
+    }
+
+    Row<int64_t>& Trainer::GetSummaryRow()
+    {
+        return GetRow<int64_t>(kSummaryRow, 0);
+    }
+
+    void Trainer::UpdateSummary(integer_t topic_id, int64_t delta)
+    {
+        Add<int64_t>(kSummaryRow, 0, topic_id, delta);
     }
 
     void ParamLoader::ParseAndRequest(DataBlockBase* data_block)

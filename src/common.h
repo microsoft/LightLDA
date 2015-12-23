@@ -1,4 +1,4 @@
-/*!
+/*! 
  * \file common.h
  * \brief Defines common settings in LightLDA
  */
@@ -21,7 +21,7 @@ namespace multiverso { namespace lightlda
     /*! \brief max length of a document */
     const int32_t kMaxDocLength = 8192;
 
-    //
+    // 
     typedef int64_t DocNumber;
 
     /*!
@@ -62,8 +62,6 @@ namespace multiverso { namespace lightlda
         static bool warm_start;
         /*! \brief option specity whether use out of core computation */
         static bool out_of_core;
-        /*! \brief option specify whether train or infer */
-        static bool infer;
         /*! \brief memory capacity settings, for memory pools */
         static int64_t data_capacity;
         static int64_t model_capacity;

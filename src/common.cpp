@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-namespace multiverso { namespace lightlda
+namespace multiverso { namespace lightlda 
 {
     const int64_t kMB = 1024 * 1024;
 
@@ -22,7 +22,6 @@ namespace multiverso { namespace lightlda
     std::string Config::input_dir = "";
     bool Config::warm_start = false;
     bool Config::out_of_core = false;
-    bool Config::infer = false;
     int64_t Config::data_capacity = 1024 * kMB;
     int64_t Config::model_capacity = 512 * kMB;
     int64_t Config::delta_capacity = 256 * kMB;
@@ -56,11 +55,10 @@ namespace multiverso { namespace lightlda
             if (strcmp(argv[i], "-server_file") == 0) server_file = std::string(argv[i + 1]);
             if (strcmp(argv[i], "-warm_start") == 0) warm_start = true;
             if (strcmp(argv[i], "-out_of_core") == 0) out_of_core = true;
-            if (strcmp(argv[i], "-infer") == 0) infer = true;
             if (strcmp(argv[i], "-data_capacity") == 0) data_capacity = atoi(argv[i + 1]) * kMB;
             if (strcmp(argv[i], "-model_capacity") == 0) model_capacity = atoi(argv[i + 1]) * kMB;
             if (strcmp(argv[i], "-alias_capacity") == 0) alias_capacity = atoi(argv[i + 1]) * kMB;
-            if (strcmp(argv[i], "-delta_capacity") == 0) delta_capacity = atoi(argv[i + 1]) * kMB;
+            if (strcmp(argv[i], "-delta_capacity") == 0) delta_capacity = atoi(argv[i + 1]) * kMB;            
         }
         Check();
     }
@@ -81,10 +79,9 @@ namespace multiverso { namespace lightlda
         printf("-num_servers <arg>       Number of servers. Default: 1\n");
         printf("-num_local_workers <arg> Number of local training threads. Default: 4\n");
         printf("-num_aggregator <arg>    Number of local aggregation threads. Default: 1\n");
-        printf("-server_file <arg>       Server endpoint file. Used by MPI-free version\n");
+        printf("-server_file <arg>       Server endpoint file. Used by MPI-free version\n"); 
         printf("-warm_start              Warm start \n");
         printf("-out_of_core             Use out of core computing \n\n");
-        printf("-infer                   infer mode \n\n");
         printf("-data_capacity <arg>     Memory pool size(MB) for data storage, \n");
         printf("                         should larger than the any data block\n");
         printf("-model_capacity <arg>    Memory pool size(MB) for local model cache\n");
@@ -95,7 +92,7 @@ namespace multiverso { namespace lightlda
 
     void Config::Check()
     {
-        if (input_dir == "" || num_vocabs <= 0 || max_num_document == -1)
+        if (input_dir == "" || num_vocabs <= 0 || max_num_document == -1) 
         {
             PrintUsage();
         }

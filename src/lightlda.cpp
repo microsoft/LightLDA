@@ -1,6 +1,5 @@
 ﻿#include "common.h"
 #include "trainer.h"
-#include "model.h"
 #include "alias_table.h"
 #include "data_stream.h"
 #include "data_block.h"
@@ -96,15 +95,8 @@ namespace multiverso { namespace lightlda
         static void InitMultiverso()
         {
             Multiverso::BeginConfig();
-            if(!Config::infer)
-            {
-              CreateTable();
-              ConfigTable();
-            }
-            else
-            {
-              Model::Initialize(&meta);
-            }
+            CreateTable();
+            ConfigTable();
             Initialize();
             Multiverso::EndConfig();
         }
@@ -132,13 +124,10 @@ namespace multiverso { namespace lightlda
                             if (!Config::warm_start)
                                 doc->SetTopic(cursor, rng.rand_k(Config::num_topics));
                             // Init the server table
-                            if(!Config::infer)
-                            {
-                                Multiverso::AddToServer<int32_t>(kWordTopicTable,
-                                    doc->Word(cursor), doc->Topic(cursor), 1);
-                                Multiverso::AddToServer<int64_t>(kSummaryRow,
-                                    0, doc->Topic(cursor), 1);
-                            }
+                            Multiverso::AddToServer<int32_t>(kWordTopicTable,
+                                doc->Word(cursor), doc->Topic(cursor), 1);
+                            Multiverso::AddToServer<int64_t>(kSummaryRow,
+                                0, doc->Topic(cursor), 1);
                         }
                     }
                     Multiverso::Flush();

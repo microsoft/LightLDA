@@ -19,7 +19,7 @@
 
 namespace multiverso { namespace lightlda
 {
-    class Trainer;
+    class ModelBase;
     class xorshift_rng;
     class AliasTableIndex;
 
@@ -42,10 +42,10 @@ namespace multiverso { namespace lightlda
         /*!
          * \brief Build alias table for a word
          * \param word word to bulid
-         * \param trainer for model access
+         * \param model access
          * \return success of not
          */
-        int Build(int word, Trainer* trainer);
+        int Build(int word, ModelBase* model);
         /*!
          * \brief sample from word proposal distribution
          * \param word word to sample

@@ -18,8 +18,18 @@ namespace multiverso { namespace lightlda
     class LightDocSampler;
     class Meta;
 
+    /*! \brief interface for accessing to model */
+    class ModelBase
+    {
+    public:
+        virtual Row<int32_t>& GetWordTopicRow(integer_t word_id) = 0;
+        virtual void UpdateWordTopic(integer_t word_id, integer_t topic_id, int32_t delta) = 0;
+        virtual Row<int64_t>& GetSummaryRow() = 0;
+        virtual void UpdateSummary(integer_t topic_id, int64_t delta) = 0;
+    };
+
     /*! \brief Trainer is responsible for training a data block */
-    class Trainer : public TrainerBase
+    class Trainer : public TrainerBase, public ModelBase
     {
     public:
         Trainer(AliasTable* alias, Barrier* barrier, Meta* meta);
@@ -36,7 +46,14 @@ namespace multiverso { namespace lightlda
         void Evaluate(LDADataBlock* block);
 
         void Dump(int32_t iter, LDADataBlock* lda_data_block);
-    private:
+
+        /*! \brief interface for accessing to model */
+        Row<int32_t>& GetWordTopicRow(integer_t word_id) override;
+        void UpdateWordTopic(integer_t word_id, integer_t topic_id, int32_t delta) override;
+        Row<int64_t>& GetSummaryRow() override;
+        void UpdateSummary(integer_t topic_id, int64_t delta) override;
+
+    protected:
         /*! \brief alias table, for alias access */
         AliasTable* alias_;
         /*! \brief sampler for lightlda */
