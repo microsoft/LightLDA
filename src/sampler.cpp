@@ -3,7 +3,7 @@
 #include "alias_table.h"
 #include "common.h"
 #include "document.h"
-#include "trainer.h"
+#include "model.h"
 
 #include <multiverso/row.h>
 
@@ -19,6 +19,8 @@ namespace multiverso { namespace lightlda
 
         alpha_sum_ = num_topic_ * alpha_;
         beta_sum_ = num_vocab_ * beta_;
+
+        subtractor_ = Config::inference ? 0 : 1;
 
         doc_topic_counter_.reset(new Row<int32_t>(0, 
             multiverso::Format::Sparse, kMaxDocLength));
@@ -43,10 +45,13 @@ namespace multiverso { namespace lightlda
                 doc->SetTopic(cursor, new_topic);
                 doc_topic_counter_->Add(old_topic, -1);
                 doc_topic_counter_->Add(new_topic, 1);
-                model->UpdateWordTopic(word, old_topic, -1);
-                model->UpdateSummary(old_topic, -1);
-                model->UpdateWordTopic(word, new_topic, 1);
-                model->UpdateSummary(new_topic, 1);
+                if(!Config::inference)
+                {
+                    model->AddWordTopicRow(word, old_topic, -1);
+                    model->AddSummaryRow(old_topic, -1);
+                    model->AddWordTopicRow(word, new_topic, 1);
+                    model->AddSummaryRow(new_topic, 1);
+                }
             }
             ++num_tokens;
         }
@@ -101,14 +106,14 @@ namespace multiverso { namespace lightlda
                 if (s == old_topic)
                 {
                     --n_sd_alpha;
-                    --n_sw_beta;
-                    --n_s_beta_sum;
+                    n_sw_beta -= subtractor_;
+                    n_s_beta_sum -= subtractor_;
                 }
                 if (t == old_topic)
                 {
                     --n_td_alpha;
-                    --n_tw_beta;
-                    --n_t_beta_sum;
+                    n_tw_beta -= subtractor_;
+                    n_t_beta_sum -= subtractor_;
                 }
 
                 proposal_s = (w_s_cnt + beta_) / (n_s + beta_sum_);
@@ -152,14 +157,15 @@ namespace multiverso { namespace lightlda
                 if (s == old_topic)
                 {
                     --n_sd_alpha;
-                    --n_sw_beta;
-                    --n_s_beta_sum;
+                    n_sw_beta -= subtractor_;
+                    n_s_beta_sum -= subtractor_;
                 }
                 if (t == old_topic)
                 {
                     --n_td_alpha;
-                    --n_tw_beta;
-                    --n_t_beta_sum;
+                    n_tw_beta -= subtractor_;
+                    n_t_beta_sum -= subtractor_;
+                    
                 }
 
                 proposal_s = (doc_topic_counter_->At(s) + alpha_);
@@ -228,16 +234,18 @@ namespace multiverso { namespace lightlda
                 n_sw_beta = word_topic_row.At(s) + beta_;
                 n_t_beta_sum = summary_row.At(t) + beta_sum_;
                 n_s_beta_sum = summary_row.At(s) + beta_sum_;
+
                 if (t == old_topic)
                 {
-                    n_tw_beta -= 1;
-                    n_t_beta_sum -= 1;
+                    n_tw_beta -= subtractor_;
+                    n_t_beta_sum -= subtractor_;
                 }
                 if (s == old_topic)
                 {
-                    n_sw_beta -= 1;
-                    n_s_beta_sum -= 1;
+                    n_sw_beta -= subtractor_;
+                    n_s_beta_sum -= subtractor_;
                 }
+                
                 nominator = n_tw_beta * n_s_beta_sum;
                 denominator = n_sw_beta * n_t_beta_sum;
                 pi = nominator / denominator;

@@ -1,6 +1,6 @@
 #include "alias_table.h"
 #include "common.h"
-#include "trainer.h"
+#include "model.h"
 #include "util.h"
 #include "meta.h"
 

@@ -5,10 +5,8 @@
 #ifndef LIGHTLDA_INFERER_H_
 #define LIGHTLDA_INFERER_H_
 
-#include "trainer.h"
-#include "common.h"
-#include "model.h"
 #include <pthread.h>
+#include <multiverso/multiverso.h>
 #include <multiverso/log.h>
 
 namespace multiverso { namespace lightlda
@@ -17,29 +15,27 @@ namespace multiverso { namespace lightlda
     class LDADataBlock;
     class LightDocSampler;
     class Meta;
+    class LocalModel;
     
-    class Inferer: public Trainer
+    class Inferer
     {
     public:
-        Inferer(AliasTable* alias_table, Meta* meta, Model * model,
+        Inferer(AliasTable* alias_table, Meta* meta, LocalModel * model,
                 pthread_barrier_t* barrier, 
-                int32_t id, int32_t thread_num):
-            Trainer(alias_table, nullptr, meta), model_(model),
-            barrier_(barrier), id_(id), thread_num_(thread_num) {}
+                int32_t id, int32_t thread_num);
 
-        void TrainIteration(DataBlockBase* data_block) override;
+        ~Inferer();
 
-        /*! \brief interface for accessing to model */
-        Row<int32_t>& GetWordTopicRow(integer_t word_id) override;
-        void UpdateWordTopic(integer_t word_id, integer_t topic_id, int32_t delta) override;
-        Row<int64_t>& GetSummaryRow() override;
-        void UpdateSummary(integer_t topic_id, int64_t delta) override;
+        void InferenceIteration(DataBlockBase* data_block);
     
     private:
-        Model * model_;
+        AliasTable* alias_;
+        Meta* meta_;
+        LocalModel * model_;
         pthread_barrier_t* barrier_;
         int32_t id_;
         int32_t thread_num_;
+        LightDocSampler* sampler_;
     };
 } // namespace lightlda
 } // namespace multiverso

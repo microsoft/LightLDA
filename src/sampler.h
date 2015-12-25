@@ -77,6 +77,8 @@ namespace multiverso { namespace lightlda
         float alpha_sum_;
         float beta_sum_;
 
+        int32_t subtractor_;
+
         int32_t num_vocab_;
         int32_t num_topic_;
         int32_t mh_steps_;

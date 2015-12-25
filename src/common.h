@@ -60,6 +60,8 @@ namespace multiverso { namespace lightlda
         static std::string input_dir;
         /*! \brief option specify whether warm_start */
         static bool warm_start;
+        /*! \brief inference mode */
+        static bool inference;
         /*! \brief option specity whether use out of core computation */
         static bool out_of_core;
         /*! \brief memory capacity settings, for memory pools */

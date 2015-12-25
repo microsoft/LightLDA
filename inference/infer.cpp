@@ -20,10 +20,11 @@ namespace multiverso { namespace lightlda
         {
             Log::ResetLogFile("LightLDA." + std::to_string(clock()) + ".log");
             Config::Init(argc, argv);
+            Config::inference = true;
             //init meta
             meta.Init();
             //init model
-            model = new Model(&meta); model->Init();
+            model = new LocalModel(&meta); model->Init();
             //init document stream
             data_stream = CreateDataStream();
             //init documents
@@ -40,22 +41,7 @@ namespace multiverso { namespace lightlda
             }
 
             //do inference in muti-threads
-            pthread_t * threads = new pthread_t[Config::num_local_workers];
-            if(nullptr == threads)
-            {
-                Log::Fatal("failed to allocate space for worker threads");
-            }
-            for(int32_t i = 0; i < Config::num_local_workers; ++i)
-            {
-                if(pthread_create(threads + i, nullptr, Inference, inferers[i]))
-                {
-                    Log::Fatal("failed to create worker threads");
-                }
-            }
-            for(int32_t i = 0; i < Config::num_local_workers; ++i)
-            {
-                pthread_join(threads[i], nullptr);
-            }
+            Inference(inferers);
 
             //dump doc topic
             DumpDocTopic();
@@ -66,13 +52,33 @@ namespace multiverso { namespace lightlda
                 delete inferer;
             }
             pthread_barrier_destroy(&barrier);
-            delete [] threads;
             delete data_stream;
             delete alias_table;
             delete model;
         }
     private:
-        static void* Inference(void* arg)
+        static void Inference(std::vector<Inferer*>& inferers)
+        {
+            pthread_t * threads = new pthread_t[Config::num_local_workers];
+            if(nullptr == threads)
+            {
+                Log::Fatal("failed to allocate space for worker threads");
+            }
+            for(int32_t i = 0; i < Config::num_local_workers; ++i)
+            {
+                if(pthread_create(threads + i, nullptr, InferenceThread, inferers[i]))
+                {
+                    Log::Fatal("failed to create worker threads");
+                }
+            }
+            for(int32_t i = 0; i < Config::num_local_workers; ++i)
+            {
+                pthread_join(threads[i], nullptr);
+            }
+            delete [] threads;
+        }
+
+        static void* InferenceThread(void* arg)
         {
             Inferer* inferer = (Inferer*)arg;
             // inference corpus block by block
@@ -85,16 +91,16 @@ namespace multiverso { namespace lightlda
                 std::vector<LDADataBlock> data(num_slice);
                 // inference datablock slice by slice
                 for (int32_t slice = 0; slice < num_slice; ++slice)
-                {
+                { 
+                    LDADataBlock* lda_block = &data[slice];
+                    lda_block->set_data(&data_block);
+                    lda_block->set_block(block);
+                    lda_block->set_slice(slice);
                     for (int32_t i = 0; i < Config::num_iterations; ++i)
                     {
-                        LDADataBlock* lda_block = &data[slice];
-                        lda_block->set_data(&data_block);
                         lda_block->set_iteration(i);
-                        lda_block->set_block(block);
-                        lda_block->set_slice(slice);
-                        inferer->TrainIteration(lda_block);
-                    }
+                        inferer->InferenceIteration(lda_block);
+                    }                   
                 }
                 data_stream->EndDataAccess();
             } 
@@ -161,13 +167,13 @@ namespace multiverso { namespace lightlda
         /*! \brief training data meta information */
         static Meta meta;
         /*! \brief model */
-        static Model* model;
+        static LocalModel* model;
         /*! \brief Alias Table */
         static AliasTable* alias_table;
     };
     IDataStream* Infer::data_stream = nullptr;
     Meta Infer::meta;
-    Model* Infer::model = nullptr;
+    LocalModel* Infer::model = nullptr;
     AliasTable* Infer::alias_table = nullptr;
 
 } // namespace lightlda

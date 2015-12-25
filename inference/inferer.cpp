@@ -5,13 +5,28 @@
 #include "data_block.h"
 #include "meta.h"
 #include "sampler.h"
-#include <multiverso/barrier.h>
+#include "model.h"
 #include <multiverso/stop_watch.h>
 #include <multiverso/log.h>
 
 namespace multiverso { namespace lightlda
 {
-    void Inferer::TrainIteration(DataBlockBase* data_block)
+    Inferer::Inferer(AliasTable* alias_table, Meta* meta, LocalModel * model,
+        pthread_barrier_t* barrier, 
+        int32_t id, int32_t thread_num):
+        alias_(alias_table), meta_(meta), model_(model),
+        barrier_(barrier), 
+        id_(id), thread_num_(thread_num) 
+    {
+        sampler_ = new LightDocSampler();
+    }
+
+    Inferer::~Inferer()
+    {
+        delete sampler_;
+    }
+
+    void Inferer::InferenceIteration(DataBlockBase* data_block)
     {
         StopWatch watch; watch.Start();
         LDADataBlock* lda_data_block =
@@ -39,9 +54,9 @@ namespace multiverso { namespace lightlda
                 pword < local_vocab.end(slice);
                 pword += thread_num_)
             {
-                alias_->Build(*pword, this);
+                alias_->Build(*pword, model_);
             }
-            if (id_ == 0) alias_->Build(-1, this);
+            if (id_ == 0) alias_->Build(-1, model_);
             pthread_barrier_wait(barrier_);
             if (id_ == 0)
             {
@@ -54,27 +69,9 @@ namespace multiverso { namespace lightlda
         for (int32_t doc_id = id_; doc_id < data.Size(); doc_id += thread_num_)
         {
             Document* doc = data.GetOneDoc(doc_id);
-            num_token += sampler_->SampleOneDoc(doc, slice, lastword, this, alias_);
+            num_token += sampler_->SampleOneDoc(doc, slice, lastword, model_, alias_);
         }
         if (iter == Config::num_iterations - 1) alias_->Clear();
-    }
-
-    Row<int32_t>& Inferer::GetWordTopicRow(integer_t word_id)
-    {
-        return *(static_cast<Row<int32_t>*>(model_->GetWordTopicRow(word_id)));
-    }
-
-    void Inferer::UpdateWordTopic(integer_t word_id, integer_t topic_id, int32_t delta)
-    {
-    }
-
-    Row<int64_t>& Inferer::GetSummaryRow()
-    {
-        return *(static_cast<Row<int64_t>*>(model_->GetSummaryRow(0)));
-    }
-
-    void Inferer::UpdateSummary(integer_t topic_id, int64_t delta)
-    {
     }
 } // namespace lightlda
 } // namespace multiverso

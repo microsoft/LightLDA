@@ -21,6 +21,7 @@ namespace multiverso { namespace lightlda
     std::string Config::server_file = "";
     std::string Config::input_dir = "";
     bool Config::warm_start = false;
+    bool Config::inference = false;
     bool Config::out_of_core = false;
     int64_t Config::data_capacity = 1024 * kMB;
     int64_t Config::model_capacity = 512 * kMB;
