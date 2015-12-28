@@ -24,7 +24,7 @@ namespace multiverso { namespace lightlda
             //init meta
             meta.Init();
             //init model
-            model = new LocalModel(&meta); model->Init();
+            LocalModel* model = new LocalModel(&meta); model->Init();
             //init document stream
             data_stream = CreateDataStream();
             //init documents
@@ -33,7 +33,7 @@ namespace multiverso { namespace lightlda
             std::vector<Inferer*> inferers;
             pthread_barrier_t barrier;
             pthread_barrier_init(&barrier, nullptr, Config::num_local_workers);
-            alias_table = new AliasTable();
+            AliasTable* alias_table = new AliasTable();
             for (int32_t i = 0; i < Config::num_local_workers; ++i)
             {
                inferers.push_back(new Inferer(alias_table, &meta, model, 
@@ -50,6 +50,7 @@ namespace multiverso { namespace lightlda
             for (auto& inferer : inferers)
             {
                 delete inferer;
+                inferer = nullptr;
             }
             pthread_barrier_destroy(&barrier);
             delete data_stream;
@@ -81,29 +82,29 @@ namespace multiverso { namespace lightlda
         static void* InferenceThread(void* arg)
         {
             Inferer* inferer = (Inferer*)arg;
-            // inference corpus block by block
-            for (int32_t block = 0; block < Config::num_blocks; ++block)
+            for (int32_t i = 0; i < Config::num_iterations; ++i)
             {
-                data_stream->BeforeDataAccess();
-                DataBlock& data_block = data_stream->CurrDataBlock();
-                data_block.set_meta(&meta.local_vocab(block));
-                int32_t num_slice = meta.local_vocab(block).num_slice();
-                std::vector<LDADataBlock> data(num_slice);
-                // inference datablock slice by slice
-                for (int32_t slice = 0; slice < num_slice; ++slice)
-                { 
-                    LDADataBlock* lda_block = &data[slice];
-                    lda_block->set_data(&data_block);
-                    lda_block->set_block(block);
-                    lda_block->set_slice(slice);
-                    for (int32_t i = 0; i < Config::num_iterations; ++i)
-                    {
+                // inference corpus block by block
+                for (int32_t block = 0; block < Config::num_blocks; ++block)
+                {
+                    data_stream->BeforeDataAccess();
+                    DataBlock& data_block = data_stream->CurrDataBlock();
+                    data_block.set_meta(&meta.local_vocab(block));
+                    int32_t num_slice = meta.local_vocab(block).num_slice();
+                    std::vector<LDADataBlock> data(num_slice);
+                    // inference datablock slice by slice
+                    for (int32_t slice = 0; slice < num_slice; ++slice)
+                    { 
+                        LDADataBlock* lda_block = &data[slice];
+                        lda_block->set_data(&data_block);
+                        lda_block->set_block(block);
+                        lda_block->set_slice(slice);
                         lda_block->set_iteration(i);
                         inferer->InferenceIteration(lda_block);
-                    }                   
-                }
-                data_stream->EndDataAccess();
-            } 
+                    }
+                    data_stream->EndDataAccess();
+                } 
+            }
             return nullptr;
         }
 
@@ -166,15 +167,9 @@ namespace multiverso { namespace lightlda
         static IDataStream* data_stream;
         /*! \brief training data meta information */
         static Meta meta;
-        /*! \brief model */
-        static LocalModel* model;
-        /*! \brief Alias Table */
-        static AliasTable* alias_table;
     };
     IDataStream* Infer::data_stream = nullptr;
     Meta Infer::meta;
-    LocalModel* Infer::model = nullptr;
-    AliasTable* Infer::alias_table = nullptr;
 
 } // namespace lightlda
 } // namespace multiverso
