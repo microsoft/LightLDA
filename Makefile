@@ -1,6 +1,6 @@
 PROJECT := $(shell readlink $(dir $(lastword $(MAKEFILE_LIST))) -f)
 
-CXX = g++
+CXX = g++-4.8
 CXXFLAGS = -O3 \
            -std=c++11 \
            -Wall \

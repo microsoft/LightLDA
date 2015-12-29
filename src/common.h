@@ -71,7 +71,9 @@ namespace multiverso { namespace lightlda
         static int64_t alias_capacity;
     private:
         /*! \brief Print usage */
-		static void PrintUsage();
+        static void PrintUsage();
+		static void PrintTrainingUsage();
+        static void PrintInferenceUsage();
         /*! \brief Check if the configs are valid */
         static void Check();
     };

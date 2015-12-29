@@ -16,26 +16,31 @@ namespace multiverso { namespace lightlda
     class LightDocSampler;
     class Meta;
     class LocalModel;
+    class IDataStream;
     
     class Inferer
     {
     public:
-        Inferer(AliasTable* alias_table, Meta* meta, LocalModel * model,
+        Inferer(AliasTable* alias_table, 
+                IDataStream * data_stream,
+                Meta* meta, LocalModel * model,
                 pthread_barrier_t* barrier, 
                 int32_t id, int32_t thread_num);
 
         ~Inferer();
-
-        void InferenceIteration(DataBlockBase* data_block);
-    
+        void BeforeIteration(int32_t block);
+        void DoIteration(int32_t iter);
+        void EndIteration();
     private:
         AliasTable* alias_;
+        IDataStream * data_stream_;
         Meta* meta_;
         LocalModel * model_;
         pthread_barrier_t* barrier_;
         int32_t id_;
         int32_t thread_num_;
         LightDocSampler* sampler_;
+        LDADataBlock * lda_data_block_;
     };
 } // namespace lightlda
 } // namespace multiverso

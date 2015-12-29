@@ -81,6 +81,8 @@ namespace multiverso { namespace lightlda
     private:
         /*! \brief Schedule the model and split as slices based on memory */
         void ModelSchedule();
+        /*! \brief Schedule the model without vocabulary sliptting */
+        void ModelSchedule4Inference();
         /*! \brief Build index for alias table */
         void BuildAliasIndex();
     private:

@@ -20,7 +20,6 @@ namespace multiverso { namespace lightlda
         {
             Log::ResetLogFile("LightLDA." + std::to_string(clock()) + ".log");
             Config::Init(argc, argv);
-            Config::inference = true;
             //init meta
             meta.Init();
             //init model
@@ -29,14 +28,16 @@ namespace multiverso { namespace lightlda
             data_stream = CreateDataStream();
             //init documents
             InitDocument();
+            //init alias table
+            AliasTable* alias_table = new AliasTable();
             //init inferers
             std::vector<Inferer*> inferers;
             pthread_barrier_t barrier;
             pthread_barrier_init(&barrier, nullptr, Config::num_local_workers);
-            AliasTable* alias_table = new AliasTable();
             for (int32_t i = 0; i < Config::num_local_workers; ++i)
             {
-               inferers.push_back(new Inferer(alias_table, &meta, model, 
+               inferers.push_back(new Inferer(alias_table, data_stream, 
+                    &meta, model, 
                     &barrier, i, Config::num_local_workers));
             }
 
@@ -82,28 +83,15 @@ namespace multiverso { namespace lightlda
         static void* InferenceThread(void* arg)
         {
             Inferer* inferer = (Inferer*)arg;
-            for (int32_t i = 0; i < Config::num_iterations; ++i)
+            // inference corpus block by block
+            for (int32_t block = 0; block < Config::num_blocks; ++block)
             {
-                // inference corpus block by block
-                for (int32_t block = 0; block < Config::num_blocks; ++block)
+                inferer->BeforeIteration(block);
+                for (int32_t i = 0; i < Config::num_iterations; ++i)
                 {
-                    data_stream->BeforeDataAccess();
-                    DataBlock& data_block = data_stream->CurrDataBlock();
-                    data_block.set_meta(&meta.local_vocab(block));
-                    int32_t num_slice = meta.local_vocab(block).num_slice();
-                    std::vector<LDADataBlock> data(num_slice);
-                    // inference datablock slice by slice
-                    for (int32_t slice = 0; slice < num_slice; ++slice)
-                    { 
-                        LDADataBlock* lda_block = &data[slice];
-                        lda_block->set_data(&data_block);
-                        lda_block->set_block(block);
-                        lda_block->set_slice(slice);
-                        lda_block->set_iteration(i);
-                        inferer->InferenceIteration(lda_block);
-                    }
-                    data_stream->EndDataAccess();
-                } 
+                    inferer->DoIteration(i);
+                }
+                inferer->EndIteration();
             }
             return nullptr;
         }
@@ -136,6 +124,7 @@ namespace multiverso { namespace lightlda
                 data_stream->EndDataAccess();
             }
         }
+
 
         static void DumpDocTopic()
         {
@@ -177,6 +166,7 @@ namespace multiverso { namespace lightlda
 
 int main(int argc, char** argv)
 {
+    multiverso::lightlda::Config::inference = true;
     multiverso::lightlda::Infer::Run(argc, argv);
     return 0;
 }
