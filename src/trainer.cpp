@@ -6,6 +6,7 @@
 #include "eval.h"
 #include "meta.h"
 #include "sampler.h"
+#include "model.h"
 
 #include <multiverso/barrier.h>
 #include <multiverso/stop_watch.h>
@@ -19,14 +20,21 @@ namespace multiverso { namespace lightlda
 
     Trainer::Trainer(AliasTable* alias_table, 
 		Barrier* barrier, Meta* meta) : 
-        alias_(alias_table), barrier_(barrier), meta_(meta)
+        alias_(alias_table), barrier_(barrier), meta_(meta),
+        model_(nullptr)
     {
-	      sampler_ = new LightDocSampler();
+        sampler_ = new LightDocSampler();
+    }
+
+    void Trainer::Init()
+    {
+        model_ = new PSModel(this);
     }
 
     Trainer::~Trainer()
     {
         delete sampler_;
+        if(model_ != nullptr) delete model_;
     }
 
     void Trainer::TrainIteration(DataBlockBase* data_block)
@@ -57,9 +65,9 @@ namespace multiverso { namespace lightlda
             pword < local_vocab.end(slice);
             pword += trainer_num)
         {
-            alias_->Build(*pword, this);
+            alias_->Build(*pword, model_);
         }
-        if (id == 0) alias_->Build(-1, this);
+        if (id == 0) alias_->Build(-1, model_);
         barrier_->Wait();
 
         if (TrainerId() == 0)
@@ -73,7 +81,7 @@ namespace multiverso { namespace lightlda
         for (int32_t doc_id = id; doc_id < data.Size(); doc_id += trainer_num)
         {
             Document* doc = data.GetOneDoc(doc_id);
-            num_token += sampler_->SampleOneDoc(doc, slice, lastword, this, alias_);
+            num_token += sampler_->SampleOneDoc(doc, slice, lastword, model_, alias_);
         }
         if (TrainerId() == 0)
         {

@@ -3,7 +3,7 @@
 #include "alias_table.h"
 #include "common.h"
 #include "document.h"
-#include "trainer.h"
+#include "model.h"
 
 #include <multiverso/row.h>
 
@@ -20,12 +20,14 @@ namespace multiverso { namespace lightlda
         alpha_sum_ = num_topic_ * alpha_;
         beta_sum_ = num_vocab_ * beta_;
 
+        subtractor_ = Config::inference ? 0 : 1;
+
         doc_topic_counter_.reset(new Row<int32_t>(0, 
             multiverso::Format::Sparse, kMaxDocLength));
     }
 
     int32_t LightDocSampler::SampleOneDoc(Document* doc, int32_t slice,
-        int32_t lastword, Trainer* trainer, AliasTable* alias)
+        int32_t lastword, ModelBase* model, AliasTable* alias)
     {
         DocInit(doc);
         int32_t num_tokens = 0;
@@ -37,16 +39,19 @@ namespace multiverso { namespace lightlda
             if (word > lastword) break;
             int32_t old_topic = doc->Topic(cursor);
             int32_t new_topic = Sample(doc, word, old_topic, old_topic,
-                trainer, alias);
+                model, alias);
             if (old_topic != new_topic)
             {
                 doc->SetTopic(cursor, new_topic);
                 doc_topic_counter_->Add(old_topic, -1);
                 doc_topic_counter_->Add(new_topic, 1);
-                trainer->Add<int32_t>(kWordTopicTable, word, old_topic, -1);
-                trainer->Add<int64_t>(kSummaryRow, 0, old_topic, -1);
-                trainer->Add<int32_t>(kWordTopicTable, word, new_topic, 1);
-                trainer->Add<int64_t>(kSummaryRow, 0, new_topic, 1);
+                if(!Config::inference)
+                {
+                    model->AddWordTopicRow(word, old_topic, -1);
+                    model->AddSummaryRow(old_topic, -1);
+                    model->AddWordTopicRow(word, new_topic, 1);
+                    model->AddSummaryRow(new_topic, 1);
+                }
             }
             ++num_tokens;
         }
@@ -61,7 +66,7 @@ namespace multiverso { namespace lightlda
 
     int32_t LightDocSampler::Sample(Document* doc,
         int32_t word, int32_t old_topic, int32_t s,
-        Trainer* trainer, AliasTable* alias)
+        ModelBase* model, AliasTable* alias)
     {
         int32_t t, w_t_cnt, w_s_cnt;
         int64_t n_t, n_s;
@@ -72,8 +77,8 @@ namespace multiverso { namespace lightlda
         double rejection, pi;
         int32_t m;
 
-        Row<int32_t>& word_topic_row = trainer->GetRow<int32_t>(kWordTopicTable, word);
-        Row<int64_t>& summary_row = trainer->GetRow<int64_t>(kSummaryRow, 0);
+        Row<int32_t>& word_topic_row = model->GetWordTopicRow(word);
+        Row<int64_t>& summary_row = model->GetSummaryRow();
 
         for (int32_t i = 0; i < mh_steps_; ++i)
         {
@@ -101,14 +106,14 @@ namespace multiverso { namespace lightlda
                 if (s == old_topic)
                 {
                     --n_sd_alpha;
-                    --n_sw_beta;
-                    --n_s_beta_sum;
+                    n_sw_beta -= subtractor_;
+                    n_s_beta_sum -= subtractor_;
                 }
                 if (t == old_topic)
                 {
                     --n_td_alpha;
-                    --n_tw_beta;
-                    --n_t_beta_sum;
+                    n_tw_beta -= subtractor_;
+                    n_t_beta_sum -= subtractor_;
                 }
 
                 proposal_s = (w_s_cnt + beta_) / (n_s + beta_sum_);
@@ -152,14 +157,15 @@ namespace multiverso { namespace lightlda
                 if (s == old_topic)
                 {
                     --n_sd_alpha;
-                    --n_sw_beta;
-                    --n_s_beta_sum;
+                    n_sw_beta -= subtractor_;
+                    n_s_beta_sum -= subtractor_;
                 }
                 if (t == old_topic)
                 {
                     --n_td_alpha;
-                    --n_tw_beta;
-                    --n_t_beta_sum;
+                    n_tw_beta -= subtractor_;
+                    n_t_beta_sum -= subtractor_;
+                    
                 }
 
                 proposal_s = (doc_topic_counter_->At(s) + alpha_);
@@ -179,16 +185,16 @@ namespace multiverso { namespace lightlda
 
     int32_t LightDocSampler::ApproxSample(Document* doc,
         int32_t word, int32_t old_topic, int32_t s,
-        Trainer* trainer, AliasTable* alias)
+        ModelBase* model, AliasTable* alias)
     {
         float n_tw_beta, n_sw_beta, n_t_beta_sum, n_s_beta_sum;
         float nominator, denominator;
         double rejection, pi;
         int32_t m, t;
-        Row<int32_t>& word_topic_row = 
-            trainer->GetRow<int32_t>(kWordTopicTable, word);
-        Row<int64_t>& summary_row =
-            trainer->GetRow<int64_t>(kSummaryRow, 0);
+        
+        Row<int32_t>& word_topic_row = model->GetWordTopicRow(word);
+        Row<int64_t>& summary_row = model->GetSummaryRow();
+
         for (int32_t i = 0; i < mh_steps_; ++i)
         {
             // word proposal
@@ -228,16 +234,18 @@ namespace multiverso { namespace lightlda
                 n_sw_beta = word_topic_row.At(s) + beta_;
                 n_t_beta_sum = summary_row.At(t) + beta_sum_;
                 n_s_beta_sum = summary_row.At(s) + beta_sum_;
+
                 if (t == old_topic)
                 {
-                    n_tw_beta -= 1;
-                    n_t_beta_sum -= 1;
+                    n_tw_beta -= subtractor_;
+                    n_t_beta_sum -= subtractor_;
                 }
                 if (s == old_topic)
                 {
-                    n_sw_beta -= 1;
-                    n_s_beta_sum -= 1;
+                    n_sw_beta -= subtractor_;
+                    n_s_beta_sum -= subtractor_;
                 }
+                
                 nominator = n_tw_beta * n_s_beta_sum;
                 denominator = n_sw_beta * n_t_beta_sum;
                 pi = nominator / denominator;

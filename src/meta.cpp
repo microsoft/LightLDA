@@ -103,7 +103,14 @@ namespace multiverso { namespace lightlda
         delete[] local_tf;
         delete[] tf;
 
-        ModelSchedule();
+        if(!Config::inference)
+        {
+            ModelSchedule();
+        }
+        else
+        {
+            ModelSchedule4Inference();
+        }
         BuildAliasIndex();
     }
 
@@ -166,6 +173,36 @@ namespace multiverso { namespace lightlda
             Log::Info("INFO: block = %d, the number of slice = %d\n",
                 i, local_vocab.num_slices_);
 		}
+    }
+
+    void Meta::ModelSchedule4Inference()
+    {
+        Config::alias_capacity = 0;
+        int32_t alias_thresh = (Config::num_topics * 2) / 3;
+        // Schedule for each data block
+        for (int32_t i = 0; i < Config::num_blocks; ++i)
+        {
+            LocalVocab& local_vocab = local_vocabs_[i];
+            int32_t* vocabs = local_vocab.vocabs_;
+            local_vocab.slice_index_.push_back(0);
+            local_vocab.slice_index_.push_back(local_vocab.size_);
+            local_vocab.num_slices_ = 1;
+            int64_t alias_offset = 0;
+            for (int32_t j = 0; j < local_vocab.size_; ++j)
+            {
+                int32_t word = vocabs[j];
+                int32_t tf = tf_[word];
+                int32_t alias_size = (tf > alias_thresh) ?
+                    Config::num_topics * 2 * sizeof(int32_t) :
+                    tf * 3 * sizeof(int32_t);
+                alias_offset += alias_size;
+            }
+            if(alias_offset > Config::alias_capacity)
+            {
+                Config::alias_capacity = alias_offset;
+            }
+        }
+        Log::Info("Actual Alias capacity: %d MB\n", Config::alias_capacity/1024/1024);
     }
 
     void Meta::BuildAliasIndex()

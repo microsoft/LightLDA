@@ -19,7 +19,7 @@ namespace multiverso { namespace lightlda
 {
     class AliasTable;
     class Document;
-    class Trainer;
+    class ModelBase;
     
     /*! \brief lightlda sampler */
     class LightDocSampler
@@ -32,12 +32,12 @@ namespace multiverso { namespace lightlda
          * \param doc pointer to document
          * \param slice slice id
          * \param lastword last word of current slice
-         * \param trainer pointer to trainer, for access of model
+         * \param model pointer model, for access of model
          * \param alias pointer to alias table, for access of alias
          * \return number of sampled token
          */
         int32_t SampleOneDoc(Document* doc, int32_t slice, int32_t lastword,
-            Trainer* trainer, AliasTable* alias);
+            ModelBase* model, AliasTable* alias);
         /*!
          * \brief Get doc-topic-counter, for reusing this container
          * \return reference to light hash map
@@ -55,11 +55,11 @@ namespace multiverso { namespace lightlda
          * \param word current token
          * \param state state of the word
          * \param old_topic old topic assignment of this token
-         * \param trainer for model access
+         * \param model access
          * \param alias for alias table access
          */
         int32_t Sample(Document* doc, int32_t word, int32_t state, 
-            int32_t old_topic, Trainer* trainer, AliasTable* alias);
+            int32_t old_topic, ModelBase* model, AliasTable* alias);
 
         /*! 
          * \brief Sample the latent topic assignment for a token. This function
@@ -69,13 +69,15 @@ namespace multiverso { namespace lightlda
          * \param same with Sample
          */
         int32_t ApproxSample(Document* doc, int32_t word, int32_t state, 
-            int32_t old_topic, Trainer* trainer, AliasTable* alias);
+            int32_t old_topic, ModelBase* model, AliasTable* alias);
     private:
         // lda hyper-parameter
         float alpha_;
         float beta_;
         float alpha_sum_;
         float beta_sum_;
+
+        int32_t subtractor_;
 
         int32_t num_vocab_;
         int32_t num_topic_;

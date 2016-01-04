@@ -1,6 +1,6 @@
 #include "alias_table.h"
 #include "common.h"
-#include "trainer.h"
+#include "model.h"
 #include "util.h"
 #include "meta.h"
 
@@ -40,7 +40,7 @@ namespace multiverso { namespace lightlda
         table_index_ = table_index;
     }
 
-    int32_t AliasTable::Build(int32_t word, Trainer* trainer)
+    int32_t AliasTable::Build(int32_t word, ModelBase* model)
     {       
         if (q_w_proportion_ == nullptr)
             q_w_proportion_ = new std::vector<float>(num_topics_);
@@ -50,10 +50,8 @@ namespace multiverso { namespace lightlda
             L_ = new std::vector<std::pair<int32_t, int32_t>>(num_topics_);
         if (H_ == nullptr)
             H_ = new std::vector<std::pair<int32_t, int32_t>>(num_topics_);
-
         // Compute the proportion
-        Row<int64_t>& summary_row = trainer->GetRow<int64_t>(kSummaryRow, 0);
-
+        Row<int64_t>& summary_row = model->GetSummaryRow();
         if (word == -1) // build alias row for beta 
         {
             beta_mass_ = 0;
@@ -68,8 +66,7 @@ namespace multiverso { namespace lightlda
         else // build alias row for word
         {            
             WordEntry& word_entry = table_index_->word_entry(word);
-            Row<int32_t>& word_topic_row =
-                trainer->GetRow<int32_t>(kWordTopicTable, word);
+            Row<int32_t>& word_topic_row = model->GetWordTopicRow(word);
             int32_t size = 0;
             mass_[word] = 0;
             if (word_entry.is_dense)

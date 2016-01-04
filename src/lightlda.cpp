@@ -27,7 +27,9 @@ namespace multiverso { namespace lightlda
             std::vector<TrainerBase*> trainers;
             for (int32_t i = 0; i < Config::num_local_workers; ++i)
             {
-                trainers.push_back(new Trainer(alias_table, barrier, &meta));
+                Trainer* trainer = new Trainer(alias_table, barrier, &meta);
+                trainer->Init();
+                trainers.push_back(trainer);
             }
 
             ParamLoader* param_loader = new ParamLoader();
