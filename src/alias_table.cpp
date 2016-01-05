@@ -149,7 +149,7 @@ namespace multiverso { namespace lightlda
                 int32_t* p = beta_kv_vector_ + 2 * idx;
                 int32_t k = *p++;
                 int32_t v = *p;
-                int32_t m = (-beta_sample < v);
+                int32_t m = -(beta_sample < v);
                 return (idx & m) | (k & ~m);
             }
         }
