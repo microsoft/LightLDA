@@ -9,7 +9,9 @@
 #include "inferer.h"
 #include <vector>
 #include <iostream>
-#include <pthread.h>
+#include <thread>
+// #include <pthread.h>
+#include <multiverso/barrier.h>
 
 namespace multiverso { namespace lightlda
 {     
@@ -18,7 +20,7 @@ namespace multiverso { namespace lightlda
     public:
         static void Run(int argc, char** argv)
         {
-            Log::ResetLogFile("LightLDA." + std::to_string(clock()) + ".log");
+            Log::ResetLogFile("LightLDA_infer." + std::to_string(clock()) + ".log");
             Config::Init(argc, argv);
             //init meta
             meta.Init();
@@ -32,8 +34,9 @@ namespace multiverso { namespace lightlda
             AliasTable* alias_table = new AliasTable();
             //init inferers
             std::vector<Inferer*> inferers;
-            pthread_barrier_t barrier;
-            pthread_barrier_init(&barrier, nullptr, Config::num_local_workers);
+            Barrier barrier(Config::num_local_workers);
+            // pthread_barrier_t barrier;
+            // pthread_barrier_init(&barrier, nullptr, Config::num_local_workers);
             for (int32_t i = 0; i < Config::num_local_workers; ++i)
             {
                inferers.push_back(new Inferer(alias_table, data_stream, 
@@ -53,7 +56,7 @@ namespace multiverso { namespace lightlda
                 delete inferer;
                 inferer = nullptr;
             }
-            pthread_barrier_destroy(&barrier);
+            // pthread_barrier_destroy(&barrier);
             delete data_stream;
             delete alias_table;
             delete model;
@@ -61,23 +64,26 @@ namespace multiverso { namespace lightlda
     private:
         static void Inference(std::vector<Inferer*>& inferers)
         {
-            pthread_t * threads = new pthread_t[Config::num_local_workers];
-            if(nullptr == threads)
+            //pthread_t * threads = new pthread_t[Config::num_local_workers];
+            //if(nullptr == threads)
+            //{
+            //    Log::Fatal("failed to allocate space for worker threads");
+            //}
+            std::vector<std::thread> threads;
+            for(int32_t i = 0; i < Config::num_local_workers; ++i)
             {
-                Log::Fatal("failed to allocate space for worker threads");
+                threads.push_back(std::thread(&InferenceThread, inferers[i]));
+                //if(pthread_create(threads + i, nullptr, InferenceThread, inferers[i]))
+                //{
+                //    Log::Fatal("failed to create worker threads");
+                //}
             }
             for(int32_t i = 0; i < Config::num_local_workers; ++i)
             {
-                if(pthread_create(threads + i, nullptr, InferenceThread, inferers[i]))
-                {
-                    Log::Fatal("failed to create worker threads");
-                }
+                // pthread_join(threads[i], nullptr);
+                threads[i].join();
             }
-            for(int32_t i = 0; i < Config::num_local_workers; ++i)
-            {
-                pthread_join(threads[i], nullptr);
-            }
-            delete [] threads;
+            // delete [] threads;
         }
 
         static void* InferenceThread(void* arg)

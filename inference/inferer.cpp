@@ -9,13 +9,14 @@
 #include "data_stream.h"
 #include <multiverso/stop_watch.h>
 #include <multiverso/log.h>
+#include <multiverso/barrier.h>
 
 namespace multiverso { namespace lightlda
 {
     Inferer::Inferer(AliasTable* alias_table,
         IDataStream * data_stream,
         Meta* meta, LocalModel * model,
-        pthread_barrier_t* barrier, 
+        Barrier* barrier, 
         int32_t id, int32_t thread_num):
         alias_(alias_table), data_stream_(data_stream),
         meta_(meta), model_(model),
@@ -36,7 +37,8 @@ namespace multiverso { namespace lightlda
     {
         //get data block
         if(id_ == 0) data_stream_->BeforeDataAccess();
-        pthread_barrier_wait(barrier_);
+        // pthread_barrier_wait(barrier_);
+        barrier_->Wait();
         DataBlock& data = data_stream_->CurrDataBlock();
         data.set_meta(&(meta_->local_vocab(block)));
         lda_data_block_->set_data(&data);
@@ -47,7 +49,8 @@ namespace multiverso { namespace lightlda
         const LocalVocab& local_vocab = data.meta();
         //determin alias index
         if (id_ == 0) alias_->Init(meta_->alias_index(block, 0));
-        pthread_barrier_wait(barrier_);
+        // pthread_barrier_wait(barrier_);
+        barrier_->Wait();
         // build alias table 
         for (const int32_t* pword = local_vocab.begin(0) + id_;
             pword < local_vocab.end(0);
@@ -56,7 +59,8 @@ namespace multiverso { namespace lightlda
             alias_->Build(*pword, model_);
         }
         if (id_ == 0) alias_->Build(-1, model_);
-        pthread_barrier_wait(barrier_);
+        // pthread_barrier_wait(barrier_);
+        barrier_->Wait();
         if (id_ == 0)
         {
             Log::Info("Alias Time used: %.2f s \n", watch.ElapsedSeconds());
@@ -75,7 +79,8 @@ namespace multiverso { namespace lightlda
             Log::Info("Iter = %d, Block = %d\n", iter, block);
         }
         // wait for all threads
-        pthread_barrier_wait(barrier_);
+        // pthread_barrier_wait(barrier_);
+        barrier_->Wait();
         // Inference with lightlda sampler
         for (int32_t doc_id = id_; doc_id < data.Size(); doc_id += thread_num_)
         {
@@ -86,7 +91,8 @@ namespace multiverso { namespace lightlda
 
     void Inferer::EndIteration()
     {
-        pthread_barrier_wait(barrier_);
+        // pthread_barrier_wait(barrier_);
+        barrier_->Wait();
         if(id_ == 0)
         {
             data_stream_->EndDataAccess();
