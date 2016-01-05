@@ -23,59 +23,52 @@ namespace multiverso { namespace lightlda
         id_(id), thread_num_(thread_num) 
     {
         sampler_ = new LightDocSampler();
-        lda_data_block_ = new LDADataBlock();
     }
 
     Inferer::~Inferer()
     {
         delete sampler_;
-        delete lda_data_block_;
     }
 
     void Inferer::BeforeIteration(int32_t block)
     {
-        //get data block
-        if(id_ == 0) data_stream_->BeforeDataAccess();
+        //init current data block
+        if(id_ == 0)
+        {
+	    data_stream_->BeforeDataAccess();
+            DataBlock& data = data_stream_->CurrDataBlock();
+            data.set_meta(&(meta_->local_vocab(block)));
+            alias_->Init(meta_->alias_index(block, 0));
+            alias_->Build(-1, model_);
+	}
         pthread_barrier_wait(barrier_);
-        DataBlock& data = data_stream_->CurrDataBlock();
-        data.set_meta(&(meta_->local_vocab(block)));
-        lda_data_block_->set_data(&data);
-        lda_data_block_->set_block(block);
-        lda_data_block_->set_slice(0);        
-
-        StopWatch watch; watch.Start();
-        const LocalVocab& local_vocab = data.meta();
-        //determin alias index
-        if (id_ == 0) alias_->Init(meta_->alias_index(block, 0));
-        pthread_barrier_wait(barrier_);
+        
         // build alias table 
+	DataBlock& data = data_stream_->CurrDataBlock();
+        const LocalVocab& local_vocab = data.meta();
+        StopWatch watch; watch.Start();
         for (const int32_t* pword = local_vocab.begin(0) + id_;
             pword < local_vocab.end(0);
             pword += thread_num_)
         {
             alias_->Build(*pword, model_);
         }
-        if (id_ == 0) alias_->Build(-1, model_);
         pthread_barrier_wait(barrier_);
         if (id_ == 0)
         {
-            Log::Info("Alias Time used: %.2f s \n", watch.ElapsedSeconds());
+            Log::Info("block=%d, Alias Time used: %.2f s \n", block, watch.ElapsedSeconds());
         }
     }
 
     void Inferer::DoIteration(int32_t iter)
     {
-        lda_data_block_->set_iteration(iter);
-        DataBlock& data = lda_data_block_->data();
-        int32_t block = lda_data_block_->block();
-        const LocalVocab& local_vocab = data.meta();
-        int32_t lastword = local_vocab.LastWord(0);
         if (id_ == 0)
         {
-            Log::Info("Iter = %d, Block = %d\n", iter, block);
+            Log::Info("iter=%d\n", iter);
         }
-        // wait for all threads
-        pthread_barrier_wait(barrier_);
+	DataBlock& data = data_stream_->CurrDataBlock();
+        const LocalVocab& local_vocab = data.meta();
+        int32_t lastword = local_vocab.LastWord(0);
         // Inference with lightlda sampler
         for (int32_t doc_id = id_; doc_id < data.Size(); doc_id += thread_num_)
         {
