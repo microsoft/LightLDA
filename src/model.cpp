@@ -2,7 +2,7 @@
 
 #ifdef _MSC_VER
 // TODO
-#elif
+#else
 #include <dirent.h>
 #include <regex.h>
 #endif
@@ -49,7 +49,7 @@ namespace multiverso { namespace lightlda
     {
 #ifdef _MSC_VER
         Log::Fatal("Not implementent yet on Windows\n");
-#elif
+#else
         Log::Info("loading model\n");
         //set regex for model files
         regex_t model_wordtopic_regex;
