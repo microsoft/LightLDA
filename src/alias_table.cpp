@@ -1,10 +1,13 @@
 #include "alias_table.h"
+
 #include "common.h"
 #include "model.h"
 #include "util.h"
 #include "meta.h"
 
 #include <multiverso/lock.h>
+#include <multiverso/log.h>
+#include <multiverso/row.h>
 #include <multiverso/row_iter.h>
 
 namespace multiverso { namespace lightlda

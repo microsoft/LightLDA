@@ -5,6 +5,7 @@
 #include "document.h"
 #include "model.h"
 
+#include <multiverso/log.h>
 #include <multiverso/row.h>
 
 namespace multiverso { namespace lightlda
