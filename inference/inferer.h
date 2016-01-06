@@ -5,11 +5,16 @@
 #ifndef LIGHTLDA_INFERER_H_
 #define LIGHTLDA_INFERER_H_
 
-#include <pthread.h>
+// #include <pthread.h>
 #include <multiverso/multiverso.h>
 #include <multiverso/log.h>
+#include <multiverso/barrier.h>
 
-namespace multiverso { namespace lightlda
+namespace multiverso 
+{ 
+    class Barrier;
+
+namespace lightlda
 {
     class AliasTable;
     class LDADataBlock;
@@ -24,7 +29,7 @@ namespace multiverso { namespace lightlda
         Inferer(AliasTable* alias_table, 
                 IDataStream * data_stream,
                 Meta* meta, LocalModel * model,
-                pthread_barrier_t* barrier, 
+                Barrier* barrier, 
                 int32_t id, int32_t thread_num);
 
         ~Inferer();
@@ -36,7 +41,7 @@ namespace multiverso { namespace lightlda
         IDataStream * data_stream_;
         Meta* meta_;
         LocalModel * model_;
-        pthread_barrier_t* barrier_;
+        Barrier* barrier_;
         int32_t id_;
         int32_t thread_num_;
         LightDocSampler* sampler_;

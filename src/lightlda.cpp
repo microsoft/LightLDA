@@ -28,7 +28,6 @@ namespace multiverso { namespace lightlda
             for (int32_t i = 0; i < Config::num_local_workers; ++i)
             {
                 Trainer* trainer = new Trainer(alias_table, barrier, &meta);
-                trainer->Init();
                 trainers.push_back(trainer);
             }
 

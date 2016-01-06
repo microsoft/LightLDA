@@ -9,13 +9,14 @@
 #include "data_stream.h"
 #include <multiverso/stop_watch.h>
 #include <multiverso/log.h>
+#include <multiverso/barrier.h>
 
 namespace multiverso { namespace lightlda
 {
     Inferer::Inferer(AliasTable* alias_table,
         IDataStream * data_stream,
         Meta* meta, LocalModel * model,
-        pthread_barrier_t* barrier, 
+        Barrier* barrier, 
         int32_t id, int32_t thread_num):
         alias_(alias_table), data_stream_(data_stream),
         meta_(meta), model_(model),
@@ -41,8 +42,8 @@ namespace multiverso { namespace lightlda
             alias_->Init(meta_->alias_index(block, 0));
             alias_->Build(-1, model_);
 	}
-        pthread_barrier_wait(barrier_);
-        
+        barrier_->Wait();
+
         // build alias table 
 	DataBlock& data = data_stream_->CurrDataBlock();
         const LocalVocab& local_vocab = data.meta();
@@ -53,7 +54,7 @@ namespace multiverso { namespace lightlda
         {
             alias_->Build(*pword, model_);
         }
-        pthread_barrier_wait(barrier_);
+        barrier_->Wait();
         if (id_ == 0)
         {
             Log::Info("block=%d, Alias Time used: %.2f s \n", block, watch.ElapsedSeconds());
@@ -79,7 +80,7 @@ namespace multiverso { namespace lightlda
 
     void Inferer::EndIteration()
     {
-        pthread_barrier_wait(barrier_);
+        barrier_->Wait();
         if(id_ == 0)
         {
             data_stream_->EndDataAccess();

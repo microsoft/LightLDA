@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lightlda", "lightlda\lightlda.vcxproj", "{9A6EEB61-6B68-49A3-B83A-E044F6678D6A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dump_binary", "dump_binary\dump_binary.vcxproj", "{FFD24CAD-825A-4732-8186-4361D3E1438F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "infer", "infer\infer.vcxproj", "{3CF22D68-9F4B-46B9-B0D4-7129467DD759}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,6 +42,17 @@ Global
 		{FFD24CAD-825A-4732-8186-4361D3E1438F}.Release|Win32.Build.0 = Release|Win32
 		{FFD24CAD-825A-4732-8186-4361D3E1438F}.Release|x64.ActiveCfg = Release|x64
 		{FFD24CAD-825A-4732-8186-4361D3E1438F}.Release|x64.Build.0 = Release|x64
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Debug|Win32.Build.0 = Debug|Win32
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Debug|x64.ActiveCfg = Debug|Win32
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Release|Win32.ActiveCfg = Release|Win32
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Release|Win32.Build.0 = Release|Win32
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Release|x64.ActiveCfg = Release|x64
+		{3CF22D68-9F4B-46B9-B0D4-7129467DD759}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
