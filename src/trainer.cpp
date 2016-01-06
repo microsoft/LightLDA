@@ -24,17 +24,13 @@ namespace multiverso { namespace lightlda
         model_(nullptr)
     {
         sampler_ = new LightDocSampler();
-    }
-
-    void Trainer::Init()
-    {
         model_ = new PSModel(this);
     }
 
     Trainer::~Trainer()
     {
         delete sampler_;
-        if(model_ != nullptr) delete model_;
+        delete model_;
     }
 
     void Trainer::TrainIteration(DataBlockBase* data_block)

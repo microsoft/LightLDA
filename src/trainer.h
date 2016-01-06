@@ -25,7 +25,6 @@ namespace multiverso { namespace lightlda
     public:
         Trainer(AliasTable* alias, Barrier* barrier, Meta* meta);
         ~Trainer();
-        void Init();
         /*!
          * \brief Defines Trainning method for a data_block in one iteration
          * \param data_block pointer to data block base
