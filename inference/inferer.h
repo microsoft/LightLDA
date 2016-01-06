@@ -45,7 +45,6 @@ namespace lightlda
         int32_t id_;
         int32_t thread_num_;
         LightDocSampler* sampler_;
-        LDADataBlock * lda_data_block_;
     };
 } // namespace lightlda
 } // namespace multiverso
