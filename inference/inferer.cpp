@@ -74,7 +74,8 @@ namespace multiverso { namespace lightlda
         for (int32_t doc_id = id_; doc_id < data.Size(); doc_id += thread_num_)
         {
             Document* doc = data.GetOneDoc(doc_id);
-            sampler_->SampleOneDoc(doc, 0, lastword, model_, alias_);
+            //TODO: Asymmeric prior
+            sampler_->SampleOneDoc(doc, 0, lastword, model_, alias_, nullptr);
         }
     }
 

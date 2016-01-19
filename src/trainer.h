@@ -14,6 +14,7 @@
 namespace multiverso { namespace lightlda
 {
     class AliasTable;
+    class AsymAlpha;
     class LDADataBlock;
     class LightDocSampler;
     class Meta;
@@ -23,7 +24,7 @@ namespace multiverso { namespace lightlda
     class Trainer : public TrainerBase
     {
     public:
-        Trainer(AliasTable* alias, Barrier* barrier, Meta* meta);
+        Trainer(AliasTable* alias, AsymAlpha* asym_alpha, Barrier* barrier, Meta* meta);
         ~Trainer();
         /*!
          * \brief Defines Trainning method for a data_block in one iteration
@@ -41,6 +42,8 @@ namespace multiverso { namespace lightlda
     private:
         /*! \brief alias table, for alias access */
         AliasTable* alias_;
+        /*! \brief asym alpha */
+        AsymAlpha* asym_alpha_;
         /*! \brief sampler for lightlda */
         LightDocSampler* sampler_;
         /*! \brief barrier for thread-sync */

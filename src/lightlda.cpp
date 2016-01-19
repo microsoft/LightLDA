@@ -1,10 +1,12 @@
 ﻿#include "common.h"
 #include "trainer.h"
 #include "alias_table.h"
+#include "asym_alpha.h"
 #include "data_stream.h"
 #include "data_block.h"
 #include "document.h"
 #include "meta.h"
+#include "model.h"
 #include "util.h"
 #include <vector>
 #include <iostream>
@@ -22,12 +24,17 @@ namespace multiverso { namespace lightlda
             Config::Init(argc, argv);
             
             AliasTable* alias_table = new AliasTable();
+            AsymAlpha* asym_alpha = nullptr;
+            if(Config::asymmetric_prior)
+            {
+                asym_alpha = new AsymAlpha();
+            }
             Barrier* barrier = new Barrier(Config::num_local_workers);
             meta.Init();
             std::vector<TrainerBase*> trainers;
             for (int32_t i = 0; i < Config::num_local_workers; ++i)
             {
-                Trainer* trainer = new Trainer(alias_table, barrier, &meta);
+                Trainer* trainer = new Trainer(alias_table, asym_alpha, barrier, &meta);
                 trainers.push_back(trainer);
             }
 
@@ -43,7 +50,8 @@ namespace multiverso { namespace lightlda
                 + std::to_string(clock()) + ".log");
 
             data_stream = CreateDataStream();
-            InitMultiverso();
+            InitDocTopic();
+            PSModel::Init(&meta, data_stream);
             Train();
 
             Multiverso::Close();
@@ -59,6 +67,7 @@ namespace multiverso { namespace lightlda
             delete data_stream;
             delete barrier;
             delete alias_table;
+            if(Config::asymmetric_prior) delete asym_alpha;
         }
     private:
         static void Train()
@@ -93,16 +102,7 @@ namespace multiverso { namespace lightlda
             Multiverso::EndTrain();
         }
 
-        static void InitMultiverso()
-        {
-            Multiverso::BeginConfig();
-            CreateTable();
-            ConfigTable();
-            Initialize();
-            Multiverso::EndConfig();
-        }
-
-        static void Initialize()
+        static void InitDocTopic()
         {
             xorshift_rng rng;
             for (int32_t block = 0; block < Config::num_blocks; ++block)
@@ -124,11 +124,6 @@ namespace multiverso { namespace lightlda
                             // Init the latent variable
                             if (!Config::warm_start)
                                 doc->SetTopic(cursor, rng.rand_k(Config::num_topics));
-                            // Init the server table
-                            Multiverso::AddToServer<int32_t>(kWordTopicTable,
-                                doc->Word(cursor), doc->Topic(cursor), 1);
-                            Multiverso::AddToServer<int64_t>(kSummaryRow,
-                                0, doc->Topic(cursor), 1);
                         }
                     }
                     Multiverso::Flush();
@@ -163,60 +158,6 @@ namespace multiverso { namespace lightlda
             }
         }
 
-        static void CreateTable()
-        {
-            int32_t num_vocabs = Config::num_vocabs;
-            int32_t num_topics = Config::num_topics;
-            Type int_type = Type::Int;
-            Type longlong_type = Type::LongLong;
-            multiverso::Format dense_format = multiverso::Format::Dense;
-            multiverso::Format sparse_format = multiverso::Format::Sparse;
-
-            Multiverso::AddServerTable(kWordTopicTable, num_vocabs,
-                num_topics, int_type, dense_format);
-            Multiverso::AddCacheTable(kWordTopicTable, num_vocabs,
-                num_topics, int_type, dense_format, Config::model_capacity);
-            Multiverso::AddAggregatorTable(kWordTopicTable, num_vocabs,
-                num_topics, int_type, dense_format, Config::delta_capacity);
-
-            Multiverso::AddTable(kSummaryRow, 1, Config::num_topics,
-                longlong_type, dense_format);
-        }
-        
-        static void ConfigTable()
-        {
-            multiverso::Format dense_format = multiverso::Format::Dense;
-            multiverso::Format sparse_format = multiverso::Format::Sparse;
-            for (int32_t word = 0; word < Config::num_vocabs; ++word)
-            {
-                if (meta.tf(word) > 0)
-                {
-                    if (meta.tf(word) * kLoadFactor > Config::num_topics)
-                    {
-                        Multiverso::SetServerRow(kWordTopicTable,
-                            word, dense_format, Config::num_topics);
-                        Multiverso::SetCacheRow(kWordTopicTable,
-                            word, dense_format, Config::num_topics);
-                    }
-                    else
-                    {
-                        Multiverso::SetServerRow(kWordTopicTable,
-                            word, sparse_format, meta.tf(word) * kLoadFactor);
-                        Multiverso::SetCacheRow(kWordTopicTable,
-                            word, sparse_format, meta.tf(word) * kLoadFactor);
-                    }
-                }
-                if (meta.local_tf(word) > 0)
-                {
-                    if (meta.local_tf(word) * 2 * kLoadFactor > Config::num_topics)
-                        Multiverso::SetAggregatorRow(kWordTopicTable, 
-                            word, dense_format, Config::num_topics);
-                    else
-                        Multiverso::SetAggregatorRow(kWordTopicTable, word, 
-                            sparse_format, meta.local_tf(word) * 2 * kLoadFactor);
-                }
-            }
-        }
     private:
         /*! \brief training data access */
         static IDataStream* data_stream;

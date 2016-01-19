@@ -18,6 +18,7 @@ namespace multiverso
 namespace multiverso { namespace lightlda
 {
     class AliasTable;
+    class AsymAlpha;
     class Document;
     class ModelBase;
     
@@ -34,10 +35,11 @@ namespace multiverso { namespace lightlda
          * \param lastword last word of current slice
          * \param model pointer model, for access of model
          * \param alias pointer to alias table, for access of alias
+         * \param asym_alpha asym alpha prior provider
          * \return number of sampled token
          */
         int32_t SampleOneDoc(Document* doc, int32_t slice, int32_t lastword,
-            ModelBase* model, AliasTable* alias);
+            ModelBase* model, AliasTable* alias, AsymAlpha* asym_alpha);
         /*!
          * \brief Get doc-topic-counter, for reusing this container
          * \return reference to light hash map
@@ -57,9 +59,11 @@ namespace multiverso { namespace lightlda
          * \param old_topic old topic assignment of this token
          * \param model access
          * \param alias for alias table access
+         * \param asym_alpha asym alpha prior provider
          */
         int32_t Sample(Document* doc, int32_t word, int32_t state, 
-            int32_t old_topic, ModelBase* model, AliasTable* alias);
+            int32_t old_topic, ModelBase* model, AliasTable* alias,
+            AsymAlpha* asym_alpha);
 
         /*! 
          * \brief Sample the latent topic assignment for a token. This function
@@ -69,7 +73,8 @@ namespace multiverso { namespace lightlda
          * \param same with Sample
          */
         int32_t ApproxSample(Document* doc, int32_t word, int32_t state, 
-            int32_t old_topic, ModelBase* model, AliasTable* alias);
+            int32_t old_topic, ModelBase* model, AliasTable* alias,
+            AsymAlpha* asym_alpha);
     private:
         // lda hyper-parameter
         float alpha_;

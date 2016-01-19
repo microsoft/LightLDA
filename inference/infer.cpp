@@ -28,8 +28,8 @@ namespace multiverso { namespace lightlda
             LocalModel* model = new LocalModel(&meta); model->Init();
             //init document stream
             data_stream = CreateDataStream();
-            //init documents
-            InitDocument();
+            //init doc-topic
+            InitDocTopic();
             //init alias table
             AliasTable* alias_table = new AliasTable();
             //init inferers
@@ -102,7 +102,7 @@ namespace multiverso { namespace lightlda
             return nullptr;
         }
 
-        static void InitDocument()
+        static void InitDocTopic()
         {
             xorshift_rng rng;
             for (int32_t block = 0; block < Config::num_blocks; ++block)

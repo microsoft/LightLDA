@@ -1,12 +1,14 @@
 #include "sampler.h"
 
 #include "alias_table.h"
+#include "asym_alpha.h"
 #include "common.h"
 #include "document.h"
 #include "model.h"
 
 #include <multiverso/log.h>
 #include <multiverso/row.h>
+#include <multiverso/row_iter.h>
 
 namespace multiverso { namespace lightlda
 {
@@ -28,7 +30,8 @@ namespace multiverso { namespace lightlda
     }
 
     int32_t LightDocSampler::SampleOneDoc(Document* doc, int32_t slice,
-        int32_t lastword, ModelBase* model, AliasTable* alias)
+        int32_t lastword, ModelBase* model, AliasTable* alias,
+        AsymAlpha* asym_alpha)
     {
         DocInit(doc);
         int32_t num_tokens = 0;
@@ -40,7 +43,7 @@ namespace multiverso { namespace lightlda
             if (word > lastword) break;
             int32_t old_topic = doc->Topic(cursor);
             int32_t new_topic = Sample(doc, word, old_topic, old_topic,
-                model, alias);
+                model, alias, asym_alpha);
             if (old_topic != new_topic)
             {
                 doc->SetTopic(cursor, new_topic);
@@ -48,10 +51,21 @@ namespace multiverso { namespace lightlda
                 doc_topic_counter_->Add(new_topic, 1);
                 if(!Config::inference)
                 {
-                    model->AddWordTopicRow(word, old_topic, -1);
-                    model->AddSummaryRow(old_topic, -1);
-                    model->AddWordTopicRow(word, new_topic, 1);
-                    model->AddSummaryRow(new_topic, 1);
+                    model->AddWordTopic(word, old_topic, -1);
+                    model->AddSummary(old_topic, -1);
+                    model->AddWordTopic(word, new_topic, 1);
+                    model->AddSummary(new_topic, 1);
+                    if(Config::asymmetric_prior)
+                    {
+                        int32_t old_freq = doc_topic_counter_->At(old_topic) + 1;
+                        int32_t new_freq = doc_topic_counter_->At(new_topic);
+                        model->AddTopicFrequency(old_topic, old_freq, -1);
+                        if(new_freq - 1 > 0)
+                        {
+                            model->AddTopicFrequency(new_topic, new_freq - 1, -1);
+                        }
+                        model->AddTopicFrequency(new_topic, new_freq, 1);
+                    }
                 }
             }
             ++num_tokens;
@@ -67,12 +81,14 @@ namespace multiverso { namespace lightlda
 
     int32_t LightDocSampler::Sample(Document* doc,
         int32_t word, int32_t old_topic, int32_t s,
-        ModelBase* model, AliasTable* alias)
+        ModelBase* model, AliasTable* alias,
+        AsymAlpha* asym_alpha)
     {
         int32_t t, w_t_cnt, w_s_cnt;
         int64_t n_t, n_s;
         float n_td_alpha, n_sd_alpha;
         float n_tw_beta, n_sw_beta, n_t_beta_sum, n_s_beta_sum;
+        double n_td_or_alpha;
         float proposal_t, proposal_s;
         float nominator, denominator;
         double rejection, pi;
@@ -98,8 +114,16 @@ namespace multiverso { namespace lightlda
                 n_t = summary_row.At(t);
                 n_s = summary_row.At(s);
 
-                n_td_alpha = doc_topic_counter_->At(t) + alpha_;
-                n_sd_alpha = doc_topic_counter_->At(s) + alpha_;
+                if(asym_alpha)
+                {
+                    n_td_alpha = doc_topic_counter_->At(t) + asym_alpha->At(t);
+                    n_sd_alpha = doc_topic_counter_->At(s) + asym_alpha->At(s);
+                }
+                else
+                {
+                    n_td_alpha = doc_topic_counter_->At(t) + alpha_;
+                    n_sd_alpha = doc_topic_counter_->At(s) + alpha_;
+                }
                 n_tw_beta = w_t_cnt + beta_;
                 n_t_beta_sum = n_t + beta_sum_;
                 n_sw_beta = w_s_cnt + beta_;
@@ -129,8 +153,14 @@ namespace multiverso { namespace lightlda
                 s = (t & m) | (s & ~m);
             }
             // Doc proposal
-            double n_td_or_alpha = rng_.rand_double() *
-                (doc->Size() + alpha_sum_);
+            if(asym_alpha)
+            {
+                n_td_or_alpha = rng_.rand_double() * (doc->Size() + asym_alpha->AlphaSum());
+            }
+            else
+            {
+                n_td_or_alpha = rng_.rand_double() * (doc->Size() + alpha_sum_);
+            }
             if (n_td_or_alpha < doc->Size())
             {
                 int32_t t_idx = static_cast<int32_t>(n_td_or_alpha);
@@ -138,7 +168,14 @@ namespace multiverso { namespace lightlda
             }
             else
             {
-                t = rng_.rand_k(num_topic_);
+                if(asym_alpha)
+                {
+                    t = asym_alpha->Next();
+                }
+                else
+                {
+                    t = rng_.rand_k(num_topic_);
+                }
             }
             if (t != s)
             {
@@ -149,8 +186,19 @@ namespace multiverso { namespace lightlda
                 n_t = summary_row.At(t);
                 n_s = summary_row.At(s);
 
-                n_td_alpha = doc_topic_counter_->At(t) + alpha_;
-                n_sd_alpha = doc_topic_counter_->At(s) + alpha_;
+                if(asym_alpha)
+                {
+                    n_td_alpha = doc_topic_counter_->At(t) + asym_alpha->At(t);
+                    n_sd_alpha = doc_topic_counter_->At(s) + asym_alpha->At(s);
+                }
+                else
+                {
+                    n_td_alpha = doc_topic_counter_->At(t) + alpha_;
+                    n_sd_alpha = doc_topic_counter_->At(s) + alpha_;
+                }
+                proposal_t = n_td_alpha;
+                proposal_s = n_sd_alpha;
+
                 n_tw_beta = w_t_cnt + beta_;
                 n_t_beta_sum = n_t + beta_sum_;
                 n_sw_beta = w_s_cnt + beta_;
@@ -169,9 +217,6 @@ namespace multiverso { namespace lightlda
                     
                 }
 
-                proposal_s = (doc_topic_counter_->At(s) + alpha_);
-                proposal_t = (doc_topic_counter_->At(t) + alpha_);
-
                 nominator = n_td_alpha * n_tw_beta * n_s_beta_sum * proposal_s;
                 denominator = n_sd_alpha * n_sw_beta * n_t_beta_sum * proposal_t;
 
@@ -186,7 +231,7 @@ namespace multiverso { namespace lightlda
 
     int32_t LightDocSampler::ApproxSample(Document* doc,
         int32_t word, int32_t old_topic, int32_t s,
-        ModelBase* model, AliasTable* alias)
+        ModelBase* model, AliasTable* alias, AsymAlpha* asym_alpha)
     {
         float n_tw_beta, n_sw_beta, n_t_beta_sum, n_s_beta_sum;
         float nominator, denominator;
@@ -202,8 +247,16 @@ namespace multiverso { namespace lightlda
             t = alias->Propose(word, rng_);
             if (t != s)
             {
-                nominator = doc_topic_counter_->At(t) + alpha_;
-                denominator = doc_topic_counter_->At(s) + alpha_;
+                if(asym_alpha)
+                {
+                    nominator = doc_topic_counter_->At(t) + asym_alpha->At(t);
+                    denominator = doc_topic_counter_->At(s) + asym_alpha->At(s);
+                }
+                else
+                {
+                    nominator = doc_topic_counter_->At(t) + alpha_;
+                    denominator = doc_topic_counter_->At(s) + alpha_;                    
+                }
                 if (t == old_topic)
                 {
                     nominator -= 1;
@@ -227,7 +280,14 @@ namespace multiverso { namespace lightlda
             }
             else
             {
-                t = rng_.rand_k(num_topic_);
+                if(asym_alpha)
+                {
+                    t = asym_alpha->Next();
+                }
+                else
+                {
+                    t = rng_.rand_k(num_topic_);
+                }
             }
             if (t != s)
             {

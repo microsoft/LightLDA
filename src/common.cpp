@@ -10,6 +10,7 @@ namespace multiverso { namespace lightlda
     int32_t Config::num_vocabs = -1;
     int32_t Config::num_topics = 100;
     int32_t Config::num_iterations = 100;
+    int32_t Config::num_alpha_iterations = 0;
     int32_t Config::mh_steps = 2;
     int32_t Config::num_servers = 1;
     int32_t Config::num_local_workers = 1;
@@ -22,6 +23,7 @@ namespace multiverso { namespace lightlda
     std::string Config::input_dir = "";
     bool Config::warm_start = false;
     bool Config::inference = false;
+    bool Config::asymmetric_prior = false;
     bool Config::out_of_core = false;
     int64_t Config::data_capacity = 1024 * kMB;
     int64_t Config::model_capacity = 512 * kMB;
@@ -44,6 +46,7 @@ namespace multiverso { namespace lightlda
             if (strcmp(argv[i], "-num_vocabs") == 0) num_vocabs = atoi(argv[i + 1]);
             if (strcmp(argv[i], "-num_topics") == 0) num_topics = atoi(argv[i + 1]);
             if (strcmp(argv[i], "-num_iterations") == 0) num_iterations = atoi(argv[i + 1]);
+            if (strcmp(argv[i], "-num_alpha_iterations") == 0) num_alpha_iterations = atoi(argv[i + 1]);
             if (strcmp(argv[i], "-mh_steps") == 0) mh_steps = atoi(argv[i + 1]);
             if (strcmp(argv[i], "-num_servers") == 0) num_servers = atoi(argv[i + 1]);
             if (strcmp(argv[i], "-num_local_workers") == 0) num_local_workers = atoi(argv[i + 1]);
@@ -59,7 +62,8 @@ namespace multiverso { namespace lightlda
             if (strcmp(argv[i], "-data_capacity") == 0) data_capacity = atoi(argv[i + 1]) * kMB;
             if (strcmp(argv[i], "-model_capacity") == 0) model_capacity = atoi(argv[i + 1]) * kMB;
             if (strcmp(argv[i], "-alias_capacity") == 0) alias_capacity = atoi(argv[i + 1]) * kMB;
-            if (strcmp(argv[i], "-delta_capacity") == 0) delta_capacity = atoi(argv[i + 1]) * kMB;            
+            if (strcmp(argv[i], "-delta_capacity") == 0) delta_capacity = atoi(argv[i + 1]) * kMB; 
+            if(num_alpha_iterations > 0) asymmetric_prior = true;
         }
         Check();
     }

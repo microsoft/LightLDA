@@ -23,6 +23,31 @@ namespace multiverso { namespace lightlda
     class xorshift_rng;
     class AliasTableIndex;
 
+    class AliasMultinomialRNGInt
+    {
+    public:
+        AliasMultinomialRNGInt(int32_t size): size_(size) {}
+        void Build(const std::vector<float>& q_proportion, int32_t size,
+            float mass, int32_t & height, int32_t* kv_vector);
+        void Clear();
+        
+        //for dense sampling
+        int32_t Propose(xorshift_rng& rng, int32_t height, int32_t* kv_vector);
+        //for sparse sampling
+        int32_t Propose(xorshift_rng& rng, 
+            int32_t height, int32_t height_sum, 
+            float mass, float mass_sum,
+            int32_t* kv_vector, int32_t vsize,
+            int32_t* kv_vector_sum);
+        
+    private:
+        int32_t size_;
+        // thread local storage used for building alias
+        _THREAD_LOCAL static std::vector<int>* q_proportion_int_;
+        _THREAD_LOCAL static std::vector<std::pair<int, int>>* L_;
+        _THREAD_LOCAL static std::vector<std::pair<int, int>>* H_;
+    };
+
     /*!
      * \brief AliasTable is the storage for alias tables used for fast sampling
      *  from lightlda word proposal distribution. It optimize memory usage 
@@ -56,8 +81,7 @@ namespace multiverso { namespace lightlda
         /*! \brief Clear the alias table */
         void Clear();
     private:
-        void AliasMultinomialRNG(int32_t size, float mass, int32_t& height,
-            int32_t* kv_vector);
+        AliasMultinomialRNGInt * alias_rng_int_;
         int* memory_block_;
         int64_t memory_size_;
         AliasTableIndex* table_index_;
@@ -71,9 +95,6 @@ namespace multiverso { namespace lightlda
 
         // thread local storage used for building alias
         _THREAD_LOCAL static std::vector<float>* q_w_proportion_;
-        _THREAD_LOCAL static std::vector<int>* q_w_proportion_int_;
-        _THREAD_LOCAL static std::vector<std::pair<int, int>>* L_;
-        _THREAD_LOCAL static std::vector<std::pair<int, int>>* H_;
 
         int num_vocabs_;
         int num_topics_;
