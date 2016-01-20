@@ -255,14 +255,14 @@ namespace multiverso { namespace lightlda
         if(Config::asymmetric_prior)
         {
             Multiverso::AddServerTable(kTopicFrequencyTable, num_topics,
-                kMaxDocLength, int_type, dense_format);
+                kMaxDocLength + 1, int_type, dense_format);
             Multiverso::AddCacheTable(kTopicFrequencyTable, num_topics,
-                kMaxDocLength, int_type, dense_format, 
-                num_topics * kMaxDocLength * sizeof(int32_t));
-            Multiverso::AddAggregatorTable(kTopicFrequencyTable, num_vocabs,
-                num_topics, int_type, dense_format,
-                num_topics * kMaxDocLength * sizeof(int32_t)); 
-            Multiverso::AddTable(kDocLengthRow, 1, kMaxDocLength,
+                kMaxDocLength + 1, int_type, dense_format, 
+                num_topics * (kMaxDocLength + 1) * sizeof(int32_t));
+            Multiverso::AddAggregatorTable(kTopicFrequencyTable, num_topics,
+                kMaxDocLength + 1, int_type, dense_format,
+                num_topics * (kMaxDocLength + 1) * sizeof(int32_t)); 
+            Multiverso::AddTable(kDocLengthRow, 1, (kMaxDocLength + 1),
                 int_type, dense_format);
         }
     }
@@ -305,11 +305,11 @@ namespace multiverso { namespace lightlda
             for(int32_t topic = 0; topic < Config::num_topics; topic++)
             {
                 Multiverso::SetServerRow(kTopicFrequencyTable,
-                        topic, dense_format, kMaxDocLength);
+                        topic, dense_format, kMaxDocLength + 1);
                 Multiverso::SetCacheRow(kTopicFrequencyTable,
-                        topic, dense_format, kMaxDocLength);
+                        topic, dense_format, kMaxDocLength + 1);
                 Multiverso::SetAggregatorRow(kTopicFrequencyTable,
-                        topic, dense_format, kMaxDocLength);
+                        topic, dense_format, kMaxDocLength + 1);
             }
         }
     }

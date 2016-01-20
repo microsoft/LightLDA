@@ -39,7 +39,7 @@ namespace lightlda
         {
             non_zero_limit_[k] = 0;
             Row<int32_t>& row = model->GetTopicFrequencyRow(k);
-            for (int i = 0; i < max_doc_length_; ++i)
+            for (int i = 1; i <= max_doc_length_; ++i)
             {
                 if (row.At(i) > 0)
                 {
@@ -65,7 +65,7 @@ namespace lightlda
             currentDigamma = 0;
 
             // Iterate over the histogram:
-            for (int i = 1; i < max_doc_length_; i++)
+            for (int i = 1; i <= max_doc_length_; i++)
             {
                 currentDigamma += 1 / (parametersSum + i - 1);
                 denominator += doc_length_row.At(i) * currentDigamma;

@@ -57,14 +57,18 @@ namespace multiverso { namespace lightlda
                     model->AddSummary(new_topic, 1);
                     if(Config::asymmetric_prior)
                     {
-                        int32_t old_freq = doc_topic_counter_->At(old_topic) + 1;
+                        int32_t old_freq = doc_topic_counter_->At(old_topic);
                         int32_t new_freq = doc_topic_counter_->At(new_topic);
-                        model->AddTopicFrequency(old_topic, old_freq, -1);
+                        model->AddTopicFrequency(old_topic, old_freq + 1, -1);
+                        if(old_freq > 0)
+                        {
+                            model->AddTopicFrequency(old_topic, old_freq, 1);
+                        }
+                        model->AddTopicFrequency(new_topic, new_freq, 1);
                         if(new_freq - 1 > 0)
                         {
                             model->AddTopicFrequency(new_topic, new_freq - 1, -1);
                         }
-                        model->AddTopicFrequency(new_topic, new_freq, 1);
                     }
                 }
             }

@@ -220,20 +220,24 @@ namespace multiverso { namespace lightlda
         {
             RequestRow(kWordTopicTable, *p);
         }
-        Log::Debug("Request params. start = %d, end = %d\n",
+        Log::Debug("Request word-topic-table. start = %d, end = %d\n",
             *local_vocab.begin(slice), *(local_vocab.end(slice) - 1));
         // Request summary-row
         RequestTable(kSummaryRow);
+        Log::Debug("Request summary-row\n");
 
         if(Config::asymmetric_prior)
         {
             // Request topic-frequency-table
-            for(int32_t topic = 0; topic < Config::num_topics; topic++)
+            RequestTable(kTopicFrequencyTable);
+            Log::Debug("Request topic-frequency-table\n");
+            /*for(int32_t topic = 0; topic < Config::num_topics; topic++)
             {
                  RequestRow(kTopicFrequencyTable, topic);
-            }
+            }*/
             // Request doc-length-row
             RequestTable(kDocLengthRow);
+            Log::Debug("Request doc-length-row\n");
         }
     }
 } // namespace lightlda
