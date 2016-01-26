@@ -24,7 +24,6 @@ namespace lightlda
         ~AsymAlpha();
         void LearnDirichletPrior(ModelBase * model);
         void BuildAlias();
-        void Clear();
         int32_t Next();
         float At(int32_t idx) const;
         float AlphaSum() const;

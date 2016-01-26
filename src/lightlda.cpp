@@ -126,7 +126,6 @@ namespace multiverso { namespace lightlda
                                 doc->SetTopic(cursor, rng.rand_k(Config::num_topics));
                         }
                     }
-                    Multiverso::Flush();
                 }
                 data_stream->EndDataAccess();
             }

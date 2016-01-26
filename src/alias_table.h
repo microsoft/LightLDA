@@ -29,7 +29,7 @@ namespace multiverso { namespace lightlda
         AliasMultinomialRNGInt(int32_t size): size_(size) {}
         void Build(const std::vector<float>& q_proportion, int32_t size,
             float mass, int32_t & height, int32_t* kv_vector);
-        void Clear();
+        static void Clear();
         
         //for dense sampling
         int32_t Propose(xorshift_rng& rng, int32_t height, int32_t* kv_vector);

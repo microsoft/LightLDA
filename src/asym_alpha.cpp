@@ -109,11 +109,6 @@ namespace lightlda
             alpha_sum_, alpha_height_, kv_vector_);
     }
 
-    void AsymAlpha::Clear()
-    {
-        alias_rng_int_->Clear();
-    }
-
     int32_t AsymAlpha::Next()
     {
         return alias_rng_int_->Propose(rng_, alpha_height_, kv_vector_);

@@ -76,7 +76,7 @@ namespace multiverso { namespace lightlda
         }
         // Learn alpha and build Alias table
         if(asym_alpha_!= nullptr &&
-            iter % 5 == 0 &&
+            iter % Config::learn_alpha_every == 0 &&
             id == 0)
         {
             watch.Restart();
@@ -119,8 +119,8 @@ namespace multiverso { namespace lightlda
         // Clear the thread information in alias table
         if (iter == Config::num_iterations - 1)
         {
+	    AliasMultinomialRNGInt::Clear();
             alias_->Clear();
-            if(asym_alpha_) asym_alpha_->Clear(); 
         }
     }
 
@@ -212,6 +212,7 @@ namespace multiverso { namespace lightlda
             reinterpret_cast<LDADataBlock*>(data_block);
         // Request word-topic-table
         int32_t slice = lda_data_block->slice();
+        int32_t iter = lda_data_block->iteration();
         DataBlock& data = lda_data_block->data();
         const LocalVocab& local_vocab = data.meta();
 
@@ -226,15 +227,11 @@ namespace multiverso { namespace lightlda
         RequestTable(kSummaryRow);
         Log::Debug("Request summary-row\n");
 
-        if(Config::asymmetric_prior)
+        if(Config::asymmetric_prior && iter % Config::learn_alpha_every == 0)
         {
             // Request topic-frequency-table
             RequestTable(kTopicFrequencyTable);
             Log::Debug("Request topic-frequency-table\n");
-            /*for(int32_t topic = 0; topic < Config::num_topics; topic++)
-            {
-                 RequestRow(kTopicFrequencyTable, topic);
-            }*/
             // Request doc-length-row
             RequestTable(kDocLengthRow);
             Log::Debug("Request doc-length-row\n");

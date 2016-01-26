@@ -10,8 +10,6 @@
 #include <multiverso/row.h>
 #include <multiverso/row_iter.h>
 
-#define SAFE_DELETE(p) if((p)) { delete (p); (p) = nullptr; }
-
 namespace multiverso { namespace lightlda
 {
     _THREAD_LOCAL std::vector<float>* AliasTable::q_w_proportion_;
@@ -130,8 +128,8 @@ namespace multiverso { namespace lightlda
 
     void AliasTable::Clear()
     {
-        SAFE_DELETE(q_w_proportion_);
-        alias_rng_int_->Clear();
+	delete q_w_proportion_;
+	q_w_proportion_ = nullptr;
     }
     // -- AliasTable implement area --------------------------------- //
 
@@ -140,11 +138,29 @@ namespace multiverso { namespace lightlda
         float mass, int32_t & height, int32_t* kv_vector)
     {
         if (q_proportion_int_ == nullptr)
+	{
             q_proportion_int_ = new std::vector<int32_t>(size_);
+	}
+	else if(q_proportion_int_->size() != size_)
+	{
+            q_proportion_int_->resize(size_); 
+	}
         if (L_ == nullptr)
+	{
             L_ = new std::vector<std::pair<int32_t, int32_t>>(size_);
+	}
+	else if(L_->size() != size_)
+	{
+            L_->resize(size_); 
+	}
         if (H_ == nullptr)
+	{
             H_ = new std::vector<std::pair<int32_t, int32_t>>(size_);
+	}
+	else if(H_->size() != size_)
+	{
+            H_->resize(size_); 
+	}
 
         int32_t mass_int = 0x7fffffff;
         int32_t a_int = mass_int / size;
@@ -250,9 +266,12 @@ namespace multiverso { namespace lightlda
 
     void AliasMultinomialRNGInt::Clear()
     {
-        SAFE_DELETE(q_proportion_int_);
-        SAFE_DELETE(L_);
-        SAFE_DELETE(H_);
+	delete q_proportion_int_;
+	q_proportion_int_ = nullptr;
+	delete L_;
+	L_ = nullptr;
+	delete H_;
+	H_ = nullptr;
     }
     
     int32_t AliasMultinomialRNGInt::Propose(xorshift_rng& rng, int32_t height, 

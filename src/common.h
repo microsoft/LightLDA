@@ -42,8 +42,10 @@ namespace multiverso { namespace lightlda
         static int32_t num_topics;
         /*! \brief number of iterations */
         static int32_t num_iterations;
-        /*! \brief number of estimating alpha iterations */
+        /*! \brief number of learning alpha iterations */
         static int32_t num_alpha_iterations;
+        /*! \brief frequency of learning alpha */
+        static int32_t learn_alpha_every;
         /*! \brief number of metropolis-hastings steps */
         static int32_t mh_steps;
         /*! \brief number of servers for Multiverso setting */
