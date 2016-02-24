@@ -226,7 +226,7 @@ namespace multiverso { namespace lightlda
                     bool is_dense = true;
                     int32_t capacity = Config::num_topics;
                     int64_t size = Config::num_topics * 2;
-                    if (tf(word) < alias_thresh)
+                    if (tf(word) <= alias_thresh)
                     {
                         is_dense = false;
                         capacity = tf(word);
