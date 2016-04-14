@@ -1,4 +1,4 @@
 bin
 multiverso
-src/*.o
+*.o
 example/data
