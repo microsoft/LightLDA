@@ -1,3 +1,4 @@
 [submodule "multiverso"]
 	path = multiverso
 	url = https://github.com/Microsoft/multiverso.git
+	branch = multiverso-initial
