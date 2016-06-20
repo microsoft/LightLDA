@@ -14,8 +14,8 @@ THIRD_PARTY_LIB = $(MULTIVERSO_DIR)/third_party/lib
 
 INC_FLAGS = -I$(MULTIVERSO_INC) -I$(PROJECT)/src -I$(PROJECT)/inference
 LD_FLAGS  = -L$(MULTIVERSO_LIB) -lmultiverso
-LD_FLAGS += -L$(THIRD_PARTY_LIB) -lzmq  -lpthread
-        
+LD_FLAGS += -L$(THIRD_PARTY_LIB) -lzmq -lpthread
+  	  	
 BASE_SRC = $(shell find $(PROJECT)/src -type f -name "*.cpp" -type f ! -name "lightlda.cpp")
 BASE_OBJ = $(BASE_SRC:.cpp=.o)
 
@@ -35,37 +35,37 @@ INFER = $(BIN_DIR)/infer
 DUMP_BINARY = $(BIN_DIR)/dump_binary
 
 all: path \
-   lightlda \
-   infer \
-   dump_binary
+	 lightlda \
+	 infer \
+	 dump_binary
 
 path: $(BIN_DIR)
 
 $(BIN_DIR):
-  mkdir -p $@
+	mkdir -p $@
 
 $(LIGHTLDA): $(LIGHTLDA_OBJ)
-  $(CXX) $(LIGHTLDA_OBJ) $(CXXFLAGS) $(INC_FLAGS) $(LD_FLAGS) -o $@
+	$(CXX) $(LIGHTLDA_OBJ) $(CXXFLAGS) $(INC_FLAGS) $(LD_FLAGS) -o $@
 
 $(LIGHTLDA_OBJ): %.o: %.cpp $(LIGHTLDA_HEADERS) $(MULTIVERSO_INC)
-  $(CXX) $(CXXFLAGS) $(INC_FLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INC_FLAGS) -c $< -o $@
 
 $(INFER): $(INFER_OBJ) $(BASE_OBJ)
-  $(CXX) $(INFER_OBJ) $(BASE_OBJ) $(CXXFLAGS) $(INC_FLAGS) $(LD_FLAGS) -o $@
+	$(CXX) $(INFER_OBJ) $(BASE_OBJ) $(CXXFLAGS) $(INC_FLAGS) $(LD_FLAGS) -o $@
 
 $(INFER_OBJ): %.o: %.cpp $(INFER_HEADERS) $(MULTIVERSO_INC)
-  $(CXX) $(CXXFLAGS) $(INC_FLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INC_FLAGS) -c $< -o $@
 
 $(DUMP_BINARY): $(DUMP_BINARY_SRC)
-  $(CXX) $(CXXFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) $< -o $@
 
 lightlda: path $(LIGHTLDA)
 
 infer: path $(INFER)
-  
+	
 dump_binary: path $(DUMP_BINARY)
 
 clean:
-  rm -rf $(BIN_DIR) $(LIGHTLDA_OBJ) $(INFER_OBJ)
+	rm -rf $(BIN_DIR) $(LIGHTLDA_OBJ) $(INFER_OBJ)
 
 .PHONY: all path lightlda infer dump_binary clean
