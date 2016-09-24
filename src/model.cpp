@@ -1,7 +1,8 @@
 #include "model.h"
 
 #ifdef _MSC_VER
-// TODO
+#include <io.h>
+#include <regex>
 #else
 #include <dirent.h>
 #include <regex.h>
@@ -48,7 +49,43 @@ namespace multiverso { namespace lightlda
     void LocalModel::LoadTable()
     {
 #ifdef _MSC_VER
-        Log::Fatal("Not implementent yet on Windows\n");
+        Log::Info("loading model\n");
+        //set regex for model files
+        std::string prefix = "server_[[:digit:]]+_table_";
+        std::string suffix = ".model";
+        std::ostringstream wordtopic_regstr;
+        wordtopic_regstr << prefix << kWordTopicTable << suffix;
+        std::ostringstream summary_regstr;
+        summary_regstr << prefix << kSummaryRow << suffix;
+        std::regex model_wordtopic_regex(wordtopic_regstr.str());
+        std::regex model_summary_regex(summary_regstr.str());
+
+        //look for model files & load them
+        intptr_t handle;
+        _finddata_t fileinto;
+        std::string input_dir = Config::input_dir;
+        handle = _findfirst(input_dir.append("\\*").c_str(), &fileinto);
+        if (handle != -1)
+        {
+            do
+            {
+                if (std::regex_match(fileinto.name, fileinto.name + std::strlen(fileinto.name), model_wordtopic_regex))
+                {
+                    Log::Info("loading word topic table[%s]\n", fileinto.name);
+                    LoadWordTopicTable(Config::input_dir + "/" + fileinto.name);
+                }
+                else if (std::regex_match(fileinto.name, fileinto.name + std::strlen(fileinto.name), model_summary_regex))
+                {
+                    Log::Info("loading summary table[%s]\n", fileinto.name);
+                    LoadSummaryTable(Config::input_dir + "/" + fileinto.name);
+                }
+            } while (!_findnext(handle, &fileinto));
+        }
+        else
+        {
+            Log::Fatal("model dir does not exist : %s\n", Config::input_dir.c_str());
+        }
+        _findclose(handle);
 #else
         Log::Info("loading model\n");
         //set regex for model files
