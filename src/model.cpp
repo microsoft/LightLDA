@@ -14,14 +14,20 @@
 
 #include "meta.h"
 #include "trainer.h"
+#include "data_stream.h"
+#include "data_block.h"
+#include "document.h"
 
 #include <multiverso/log.h>
 #include <multiverso/multiverso.h>
 
 namespace multiverso { namespace lightlda
 {
-    LocalModel::LocalModel(Meta * meta) : word_topic_table_(nullptr),
-        summary_table_(nullptr), meta_(meta)
+    // -- local model implement area --------------------------------- //
+    LocalModel::LocalModel(Meta * meta) : 
+        word_topic_table_(nullptr), summary_table_(nullptr), 
+        topic_frequency_table_(nullptr), doc_length_table_(nullptr),
+        meta_(meta)
     {
         CreateTable();
     }
@@ -36,7 +42,7 @@ namespace multiverso { namespace lightlda
         int32_t num_vocabs = Config::num_vocabs;
         int32_t num_topics = Config::num_topics;
         multiverso::Format dense_format = multiverso::Format::Dense;
-        multiverso::Format sparse_format = multiverso::Format::Sparse;
+        //multiverso::Format sparse_format = multiverso::Format::Sparse;
         Type int_type = Type::Int;
         Type longlong_type = Type::LongLong;
 
@@ -215,13 +221,13 @@ namespace multiverso { namespace lightlda
         model_file.close();
     }
 
-    void LocalModel::AddWordTopicRow(
+    void LocalModel::AddWordTopic(
         integer_t word_id, integer_t topic_id, int32_t delta) 
     {
         Log::Fatal("Not implemented yet\n");
     }
 
-    void LocalModel::AddSummaryRow(integer_t topic_id, int64_t delta) 
+    void LocalModel::AddSummary(integer_t topic_id, int64_t delta) 
     {
         Log::Fatal("Not implemented yet\n");
     }
@@ -235,7 +241,166 @@ namespace multiverso { namespace lightlda
     {
         return *(static_cast<Row<int64_t>*>(summary_table_->GetRow(0)));
     }
+
+    Row<int32_t>& LocalModel::GetTopicFrequencyRow(integer_t topic_id)
+    {
+        return *(static_cast<Row<int32_t>*>(topic_frequency_table_->GetRow(topic_id)));
+    }
+    Row<int32_t>& LocalModel::GetDocLengthRow()
+    {
+        return *(static_cast<Row<int32_t>*>(doc_length_table_->GetRow(0)));
+    }
+    void LocalModel::AddTopicFrequency(integer_t topic_id, integer_t freq, 
+        int32_t delta)
+    {
+        Log::Fatal("Not implemented yet\n");
+    }
+    void LocalModel::AddDocLength(integer_t doc_len, int32_t delta)
+    {
+        Log::Fatal("Not implemented yet\n");
+    }
+    // -- local model implement area --------------------------------- //
+
+    // -- PS model implement area --------------------------------- //
+    void PSModel::Init(Meta* meta, IDataStream * data_stream)
+    {
+        Multiverso::BeginConfig();
+        CreateTable();
+        ConfigTable(meta);
+        LoadTable(meta, data_stream);
+        Multiverso::EndConfig();
+    }
+
+    void PSModel::CreateTable()
+    {
+        int32_t num_vocabs = Config::num_vocabs;
+        int32_t num_topics = Config::num_topics;
+        Type int_type = Type::Int;
+        Type longlong_type = Type::LongLong;
+        multiverso::Format dense_format = multiverso::Format::Dense;
+        //multiverso::Format sparse_format = multiverso::Format::Sparse;
+
+        Multiverso::AddServerTable(kWordTopicTable, num_vocabs,
+            num_topics, int_type, dense_format);
+        Multiverso::AddCacheTable(kWordTopicTable, num_vocabs,
+            num_topics, int_type, dense_format, Config::model_capacity);
+        Multiverso::AddAggregatorTable(kWordTopicTable, num_vocabs,
+            num_topics, int_type, dense_format, Config::delta_capacity);    
+        Multiverso::AddTable(kSummaryRow, 1, Config::num_topics,
+            longlong_type, dense_format);
+
+        if(Config::asymmetric_prior)
+        {
+            Multiverso::AddServerTable(kTopicFrequencyTable, num_topics,
+                kMaxDocLength + 1, int_type, dense_format);
+            Multiverso::AddCacheTable(kTopicFrequencyTable, num_topics,
+                kMaxDocLength + 1, int_type, dense_format, 
+                num_topics * (kMaxDocLength + 1) * sizeof(int32_t));
+            Multiverso::AddAggregatorTable(kTopicFrequencyTable, num_topics,
+                kMaxDocLength + 1, int_type, dense_format,
+                num_topics * (kMaxDocLength + 1) * sizeof(int32_t)); 
+            Multiverso::AddTable(kDocLengthRow, 1, (kMaxDocLength + 1),
+                int_type, dense_format);
+        }
+    }
+
+    void PSModel::ConfigTable(Meta* meta)
+    {
+        multiverso::Format dense_format = multiverso::Format::Dense;
+        multiverso::Format sparse_format = multiverso::Format::Sparse;
+        for (int32_t word = 0; word < Config::num_vocabs; ++word)
+        {
+            if (meta->tf(word) > 0)
+            {
+                if (meta->tf(word) * kLoadFactor > Config::num_topics)
+                {
+                    Multiverso::SetServerRow(kWordTopicTable,
+                        word, dense_format, Config::num_topics);
+                    Multiverso::SetCacheRow(kWordTopicTable,
+                        word, dense_format, Config::num_topics);
+                }
+                else
+                {
+                    Multiverso::SetServerRow(kWordTopicTable,
+                        word, sparse_format, meta->tf(word) * kLoadFactor);
+                    Multiverso::SetCacheRow(kWordTopicTable,
+                        word, sparse_format, meta->tf(word) * kLoadFactor);
+                }
+            }
+            if (meta->local_tf(word) > 0)
+            {
+                if (meta->local_tf(word) * 2 * kLoadFactor > Config::num_topics)
+                    Multiverso::SetAggregatorRow(kWordTopicTable, 
+                        word, dense_format, Config::num_topics);
+                else
+                    Multiverso::SetAggregatorRow(kWordTopicTable, word, 
+                        sparse_format, meta->local_tf(word) * 2 * kLoadFactor);
+            }
+        }
+        if(Config::asymmetric_prior)
+        {
+            for(int32_t topic = 0; topic < Config::num_topics; topic++)
+            {
+                Multiverso::SetServerRow(kTopicFrequencyTable,
+                        topic, dense_format, kMaxDocLength + 1);
+                Multiverso::SetCacheRow(kTopicFrequencyTable,
+                        topic, dense_format, kMaxDocLength + 1);
+                Multiverso::SetAggregatorRow(kTopicFrequencyTable,
+                        topic, dense_format, kMaxDocLength + 1);
+            }
+        }
+    }
     
+    void PSModel::LoadTable(Meta* meta, IDataStream * data_stream)
+    {
+        int32_t t, c;
+        std::unique_ptr<Row<int32_t>> doc_topic_counter;
+        doc_topic_counter.reset(new Row<int32_t>(0, 
+            multiverso::Format::Sparse, kMaxDocLength));
+        for (int32_t block = 0; block < Config::num_blocks; ++block)
+        {
+            data_stream->BeforeDataAccess();
+            DataBlock& data_block = data_stream->CurrDataBlock();
+            int32_t num_slice = meta->local_vocab(block).num_slice();
+            for (int32_t slice = 0; slice < num_slice; ++slice)
+            {
+                for (int32_t i = 0; i < data_block.Size(); ++i)
+                {
+                    Document* doc = data_block.GetOneDoc(i);
+                    int32_t& cursor = doc->Cursor();
+                    if (slice == 0) cursor = 0;
+                    int32_t last_word = meta->local_vocab(block).LastWord(slice);
+                    // Init the server table
+                    for (; cursor < doc->Size(); ++cursor)
+                    {
+                        if (doc->Word(cursor) > last_word) break;
+                        Multiverso::AddToServer<int32_t>(kWordTopicTable,
+                            doc->Word(cursor), doc->Topic(cursor), 1);
+                        Multiverso::AddToServer<int64_t>(kSummaryRow,
+                            0, doc->Topic(cursor), 1);
+                    }
+                    if(Config::asymmetric_prior && 0 == slice) 
+                    {
+                        doc_topic_counter->Clear();
+                        doc->GetDocTopicVector(*doc_topic_counter);
+                        Row<int32_t>::iterator iter = doc_topic_counter->Iterator();
+                        while (iter.HasNext())
+                        {
+                            t = iter.Key();
+                            c = iter.Value();
+                            Multiverso::AddToServer<int32_t>(kTopicFrequencyTable,
+                                t, c, 1);
+                            iter.Next();
+                        }
+                        Multiverso::AddToServer<int32_t>(kDocLengthRow, 0, doc->Size(), 1);
+                    }
+                }
+                Multiverso::Flush();
+            }
+            data_stream->EndDataAccess();
+        }
+    }
+
     Row<int32_t>& PSModel::GetWordTopicRow(integer_t word_id)
     {
         return trainer_->GetRow<int32_t>(kWordTopicTable, word_id);
@@ -246,16 +411,35 @@ namespace multiverso { namespace lightlda
         return trainer_->GetRow<int64_t>(kSummaryRow, 0);
     }
 
-    void PSModel::AddWordTopicRow(
+    void PSModel::AddWordTopic(
         integer_t word_id, integer_t topic_id, int32_t delta)
     {
         trainer_->Add<int32_t>(kWordTopicTable, word_id, topic_id, delta);
     }
 
-    void PSModel::AddSummaryRow(integer_t topic_id, int64_t delta)
+    void PSModel::AddSummary(integer_t topic_id, int64_t delta)
     {
         trainer_->Add<int64_t>(kSummaryRow, 0, topic_id, delta);
     }
+
+    Row<int32_t>& PSModel::GetTopicFrequencyRow(integer_t topic_id)
+    {
+        return trainer_->GetRow<int32_t>(kTopicFrequencyTable, topic_id);
+    }
+    Row<int32_t>& PSModel::GetDocLengthRow()
+    {
+        return trainer_->GetRow<int32_t>(kDocLengthRow, 0);
+    }
+    void PSModel::AddTopicFrequency(integer_t topic_id, integer_t freq, 
+        int32_t delta)
+    {
+        trainer_->Add<int32_t>(kTopicFrequencyTable, topic_id, freq, delta);
+    }
+    void PSModel::AddDocLength(integer_t doc_len, int32_t delta)
+    {
+        trainer_->Add<int32_t>(kSummaryRow, 0, doc_len, delta);
+    }
+    // -- PS model implement area --------------------------------- //
 
 } // namespace lightlda
 } // namespace multiverso

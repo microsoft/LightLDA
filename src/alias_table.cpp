@@ -13,10 +13,11 @@
 namespace multiverso { namespace lightlda
 {
     _THREAD_LOCAL std::vector<float>* AliasTable::q_w_proportion_;
-    _THREAD_LOCAL std::vector<int32_t>* AliasTable::q_w_proportion_int_;
-    _THREAD_LOCAL std::vector<std::pair<int32_t, int32_t>>* AliasTable::L_;
-    _THREAD_LOCAL std::vector<std::pair<int32_t, int32_t>>* AliasTable::H_;
+    _THREAD_LOCAL std::vector<int32_t>* AliasMultinomialRNGInt::q_proportion_int_;
+    _THREAD_LOCAL std::vector<std::pair<int32_t, int32_t>>* AliasMultinomialRNGInt::L_;
+    _THREAD_LOCAL std::vector<std::pair<int32_t, int32_t>>* AliasMultinomialRNGInt::H_;
 
+    // -- AliasTable implement area --------------------------------- //
     AliasTable::AliasTable()
     {
         memory_size_ = Config::alias_capacity / sizeof(int32_t);
@@ -25,6 +26,8 @@ namespace multiverso { namespace lightlda
         beta_ = Config::beta;
         beta_sum_ = beta_ * num_vocabs_;
         memory_block_ = new int32_t[memory_size_];
+
+        alias_rng_int_ = new AliasMultinomialRNGInt(num_topics_);
         
         beta_kv_vector_ = new int32_t[2 * num_topics_];
 
@@ -34,6 +37,7 @@ namespace multiverso { namespace lightlda
 
     AliasTable::~AliasTable()
     {
+        delete alias_rng_int_;
         delete[] memory_block_;
         delete[] beta_kv_vector_;
     }
@@ -47,12 +51,6 @@ namespace multiverso { namespace lightlda
     {       
         if (q_w_proportion_ == nullptr)
             q_w_proportion_ = new std::vector<float>(num_topics_);
-        if (q_w_proportion_int_ == nullptr)
-            q_w_proportion_int_ = new std::vector<int32_t>(num_topics_);
-        if (L_ == nullptr)
-            L_ = new std::vector<std::pair<int32_t, int32_t>>(num_topics_);
-        if (H_ == nullptr)
-            H_ = new std::vector<std::pair<int32_t, int32_t>>(num_topics_);
         // Compute the proportion
         Row<int64_t>& summary_row = model->GetSummaryRow();
         if (word == -1) // build alias row for beta 
@@ -63,8 +61,7 @@ namespace multiverso { namespace lightlda
                 (*q_w_proportion_)[k] = beta_ / (summary_row.At(k) + beta_sum_);
                 beta_mass_ += (*q_w_proportion_)[k];
             }
-            AliasMultinomialRNG(num_topics_, beta_mass_, beta_height_, 
-                beta_kv_vector_);
+            alias_rng_int_->Build(*q_w_proportion_, num_topics_, beta_mass_, beta_height_, beta_kv_vector_);
         }
         else // build alias row for word
         {            
@@ -105,7 +102,7 @@ namespace multiverso { namespace lightlda
                         word_topic_row.NonzeroSize());
                 }
             }
-            AliasMultinomialRNG(size, mass_[word], height_[word], 
+            alias_rng_int_->Build(*q_w_proportion_, size, mass_[word], height_[word], 
                 memory_block_ + word_entry.begin_offset);
         }
         return 0;
@@ -118,62 +115,53 @@ namespace multiverso { namespace lightlda
         int32_t capacity = word_entry.capacity;
         if (word_entry.is_dense)
         {
-            auto sample = rng.rand();
-            int32_t idx = sample / height_[word];
-            if (capacity <= idx) idx = capacity - 1;
-
-            int32_t* p = kv_vector + 2 * idx;
-            int32_t k = *p++;
-            int32_t v = *p;
-            int32_t m = -(sample < v);
-            return (idx & m) | (k & ~m);
+            return alias_rng_int_->Propose(rng, height_[word], kv_vector);
         }
         else
         {
-            auto sample = rng.rand_double() * (mass_[word] + beta_mass_);
-            if (sample < mass_[word])
-            {
-                int32_t* idx_vector = kv_vector + 2 * word_entry.capacity;
-                auto n_kw_sample = rng.rand();
-                int32_t idx = n_kw_sample / height_[word];
-                if (capacity <= idx) idx = capacity - 1;
-                int32_t* p = kv_vector + 2 * idx;
-                int32_t k = *p++;
-                int32_t v = *p;
-                int32_t id = idx_vector[idx];
-                int32_t m = -(n_kw_sample < v);
-                return (id & m) | (idx_vector[k] & ~m);
-            }
-            else
-            {
-                auto beta_sample = rng.rand();
-                int32_t idx = beta_sample / beta_height_;
-                if (num_topics_ <= idx) idx = num_topics_ - 1;
-                int32_t* p = beta_kv_vector_ + 2 * idx;
-                int32_t k = *p++;
-                int32_t v = *p;
-                int32_t m = -(beta_sample < v);
-                return (idx & m) | (k & ~m);
-            }
+            return alias_rng_int_->Propose(rng, height_[word], beta_height_,
+                mass_[word], beta_mass_, 
+                kv_vector, capacity, 
+                beta_kv_vector_);
         }
     }
 
     void AliasTable::Clear()
     {
-        delete q_w_proportion_;
-        q_w_proportion_ = nullptr;
-        delete q_w_proportion_int_;
-        q_w_proportion_int_ = nullptr;
-        delete L_;
-        L_ = nullptr;
-        delete H_;
-        H_ = nullptr;
+	delete q_w_proportion_;
+	q_w_proportion_ = nullptr;
     }
+    // -- AliasTable implement area --------------------------------- //
 
-
-    void AliasTable::AliasMultinomialRNG(int32_t size, float mass, int32_t& height,
-        int32_t* kv_vector)
+    // -- AliasMultinomialRNGInt implement area --------------------------------- //
+    void AliasMultinomialRNGInt::Build(const std::vector<float>& q_proportion, int32_t size,
+        float mass, int32_t & height, int32_t* kv_vector)
     {
+        if (q_proportion_int_ == nullptr)
+	{
+            q_proportion_int_ = new std::vector<int32_t>(size_);
+	}
+	else if(q_proportion_int_->size() != size_)
+	{
+            q_proportion_int_->resize(size_); 
+	}
+        if (L_ == nullptr)
+	{
+            L_ = new std::vector<std::pair<int32_t, int32_t>>(size_);
+	}
+	else if(L_->size() != size_)
+	{
+            L_->resize(size_); 
+	}
+        if (H_ == nullptr)
+	{
+            H_ = new std::vector<std::pair<int32_t, int32_t>>(size_);
+	}
+	else if(H_->size() != size_)
+	{
+            H_->resize(size_); 
+	}
+
         int32_t mass_int = 0x7fffffff;
         int32_t a_int = mass_int / size;
         mass_int = a_int * size;
@@ -181,10 +169,9 @@ namespace multiverso { namespace lightlda
         int64_t mass_sum = 0;
         for (int32_t i = 0; i < size; ++i)
         {
-            (*q_w_proportion_)[i] /= mass;
-            (*q_w_proportion_int_)[i] =
-                static_cast<int32_t>((*q_w_proportion_)[i] * mass_int);
-            mass_sum += (*q_w_proportion_int_)[i];
+            (*q_proportion_int_)[i] =
+                static_cast<int32_t>(q_proportion[i] / mass * mass_int);
+            mass_sum += (*q_proportion_int_)[i];
         }
         if (mass_sum > mass_int)
         {
@@ -192,9 +179,9 @@ namespace multiverso { namespace lightlda
             int32_t id = 0;
             for (int32_t i = 0; i < more;)
             {
-                if ((*q_w_proportion_int_)[id] >= 1)
+                if ((*q_proportion_int_)[id] >= 1)
                 {
-                    --(*q_w_proportion_int_)[id];
+                    --(*q_proportion_int_)[id];
                     ++i;
                 }
                 id = (id + 1) % size;
@@ -207,7 +194,7 @@ namespace multiverso { namespace lightlda
             int32_t id = 0;
             for (int32_t i = 0; i < more; ++i)
             {
-                ++(*q_w_proportion_int_)[id];
+                ++(*q_proportion_int_)[id];
                 id = (id + 1) % size;
             }
         }
@@ -221,7 +208,7 @@ namespace multiverso { namespace lightlda
         int32_t L_head = 0, L_tail = 0, H_head = 0, H_tail = 0;
         for (int32_t k = 0; k < size; ++k)
         {
-            int32_t val = (*q_w_proportion_int_)[k];
+            int32_t val = (*q_proportion_int_)[k];
             if (val < height)
             {
                 (*L_)[L_tail].first = k;
@@ -276,5 +263,63 @@ namespace multiverso { namespace lightlda
             ++H_head;
         }
     }
+
+    void AliasMultinomialRNGInt::Clear()
+    {
+	delete q_proportion_int_;
+	q_proportion_int_ = nullptr;
+	delete L_;
+	L_ = nullptr;
+	delete H_;
+	H_ = nullptr;
+    }
+    
+    int32_t AliasMultinomialRNGInt::Propose(xorshift_rng& rng, int32_t height, 
+        int32_t* kv_vector)
+    {
+        auto sample = rng.rand();
+        int32_t idx = sample / height;
+        if (size_ <= idx) idx = size_ - 1;
+        
+        int32_t* p = kv_vector + 2 * idx;
+        int32_t k = *p++;
+        int32_t v = *p;
+        int32_t m = -(sample < v);
+        return (idx & m) | (k & ~m);
+    }
+    
+    int32_t AliasMultinomialRNGInt::Propose(xorshift_rng& rng,
+        int32_t height, int32_t height_sum, 
+        float mass, float mass_sum,
+        int32_t* kv_vector, int32_t vsize,
+        int32_t* kv_vector_sum)
+    {
+        auto sample = rng.rand_double() * (mass + mass_sum);
+        if (sample < mass)
+        {
+            int32_t* idx_vector = kv_vector + 2 * vsize;
+            auto n_sample = rng.rand();
+            int32_t idx = n_sample / height;
+            if (vsize <= idx) idx = vsize - 1;
+            int32_t* p = kv_vector + 2 * idx;
+            int32_t k = *p++;
+            int32_t v = *p;
+            int32_t id = idx_vector[idx];
+            int32_t m = -(n_sample < v);
+            return (id & m) | (idx_vector[k] & ~m);
+        }
+        else
+        {
+            auto n_sample = rng.rand();
+            int32_t idx = n_sample / height_sum;
+            if (size_ <= idx) idx = size_ - 1;
+            int32_t* p = kv_vector_sum + 2 * idx;
+            int32_t k = *p++;
+            int32_t v = *p;
+            int32_t m = -(n_sample < v);
+            return (idx & m) | (k & ~m);
+        }
+    }
+    // -- AliasMultinomialRNGInt implement area --------------------------------- //
 } // namespace lightlda
 } // namespace multiverso

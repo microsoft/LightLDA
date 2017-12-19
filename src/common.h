@@ -16,6 +16,10 @@ namespace multiverso { namespace lightlda
     const int32_t kWordTopicTable = 0;
     /*! \brief constant variable for table id */
     const int32_t kSummaryRow = 1;
+    /*! \brief constant variable for table id */
+    const int32_t kTopicFrequencyTable = 2;
+    /*! \brief constant variable for table id */
+    const int32_t kDocLengthRow = 3;
     /*! \brief load factor for sparse hash table */
     const int32_t kLoadFactor = 2;
     /*! \brief max length of a document */
@@ -36,8 +40,12 @@ namespace multiverso { namespace lightlda
         static int32_t num_vocabs;
         /*! \brief number of topics */
         static int32_t num_topics;
-        /*! \brief number of iterations for trainning */
+        /*! \brief number of iterations */
         static int32_t num_iterations;
+        /*! \brief number of learning alpha iterations */
+        static int32_t num_alpha_iterations;
+        /*! \brief frequency of learning alpha */
+        static int32_t learn_alpha_every;
         /*! \brief number of metropolis-hastings steps */
         static int32_t mh_steps;
         /*! \brief number of servers for Multiverso setting */
@@ -62,6 +70,8 @@ namespace multiverso { namespace lightlda
         static bool warm_start;
         /*! \brief inference mode */
         static bool inference;
+        /*! \brief asymmetric prior */
+        static bool asymmetric_prior;
         /*! \brief option specity whether use out of core computation */
         static bool out_of_core;
         /*! \brief memory capacity settings, for memory pools */

@@ -7,7 +7,7 @@
 namespace multiverso { namespace lightlda
 {
     LocalVocab::LocalVocab() 
-        : num_slices_(0), own_memory_(false), vocabs_(nullptr), size_(0)
+        : num_slices_(0), vocabs_(nullptr), size_(0), own_memory_(false)
     {}
 
     LocalVocab::~LocalVocab()
@@ -161,6 +161,13 @@ namespace multiverso { namespace lightlda
                 {
                     Log::Info("Actual Model capacity: %d MB, Alias capacity: %d MB, Delta capacity: %dMB\n",
                         model_offset/1024/1024, alias_offset/1024/1024, delta_offset/1024/1024);
+		    if(Config::asymmetric_prior)
+		    {
+                    	Log::Info("Actual asymmetric alpha capacity: %d MB, Alias capacity: %dMB, Delta capacity: %d MB\n",
+                        	Config::num_topics * (kMaxDocLength + 1) * sizeof(int32_t)/1024/1024,
+                       		2 * Config::num_topics * sizeof(int32_t)/1024/1024,
+                        	Config::num_topics * (kMaxDocLength + 1) * sizeof(int32_t)/1024/1024);
+		    }
                     local_vocab.slice_index_.push_back(j);
                     ++local_vocab.num_slices_;
                     model_offset = model_size;

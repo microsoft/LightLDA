@@ -1,6 +1,7 @@
 #include "trainer.h"
 
 #include "alias_table.h"
+#include "asym_alpha.h"
 #include "common.h"
 #include "data_block.h"
 #include "eval.h"
@@ -19,8 +20,10 @@ namespace multiverso { namespace lightlda
     double Trainer::word_llh_ = 0.0;
 
     Trainer::Trainer(AliasTable* alias_table, 
+        AsymAlpha* asym_alpha,
 		Barrier* barrier, Meta* meta) : 
-        alias_(alias_table), barrier_(barrier), meta_(meta),
+        alias_(alias_table), asym_alpha_(asym_alpha), 
+        barrier_(barrier), meta_(meta),
         model_(nullptr)
     {
         sampler_ = new LightDocSampler();
@@ -71,13 +74,27 @@ namespace multiverso { namespace lightlda
             Log::Info("Rank = %d, Alias Time used: %.2f s \n",
                 Multiverso::ProcessRank(), watch.ElapsedSeconds());
         }
+        // Learn alpha and build Alias table
+        if(asym_alpha_!= nullptr &&
+            iter % Config::learn_alpha_every == 0 &&
+            id == 0)
+        {
+            watch.Restart();
+            asym_alpha_->LearnDirichletPrior(model_);
+            asym_alpha_->BuildAlias();
+            Log::Info("Rank = %d,  AsymAplha Time used: %.2f s \n",
+                Multiverso::ProcessRank(), watch.ElapsedSeconds());
+        }
+        barrier_->Wait();
+
         int32_t num_token = 0;
         watch.Restart();
         // Train with lightlda sampler
         for (int32_t doc_id = id; doc_id < data.Size(); doc_id += trainer_num)
         {
             Document* doc = data.GetOneDoc(doc_id);
-            num_token += sampler_->SampleOneDoc(doc, slice, lastword, model_, alias_);
+            num_token += sampler_->SampleOneDoc(doc, slice, lastword, model_, alias_, 
+                asym_alpha_);
         }
         if (TrainerId() == 0)
         {
@@ -100,7 +117,11 @@ namespace multiverso { namespace lightlda
         // if (iter != 0 && iter % 50 == 0) Dump(iter, lda_data_block);
 
         // Clear the thread information in alias table
-        if (iter == Config::num_iterations - 1) alias_->Clear();
+        if (iter == Config::num_iterations - 1)
+        {
+	    AliasMultinomialRNGInt::Clear();
+            alias_->Clear();
+        }
     }
 
     void Trainer::Evaluate(LDADataBlock* lda_data_block)
@@ -191,6 +212,7 @@ namespace multiverso { namespace lightlda
             reinterpret_cast<LDADataBlock*>(data_block);
         // Request word-topic-table
         int32_t slice = lda_data_block->slice();
+        int32_t iter = lda_data_block->iteration();
         DataBlock& data = lda_data_block->data();
         const LocalVocab& local_vocab = data.meta();
 
@@ -199,10 +221,21 @@ namespace multiverso { namespace lightlda
         {
             RequestRow(kWordTopicTable, *p);
         }
-        Log::Debug("Request params. start = %d, end = %d\n",
+        Log::Debug("Request word-topic-table. start = %d, end = %d\n",
             *local_vocab.begin(slice), *(local_vocab.end(slice) - 1));
         // Request summary-row
         RequestTable(kSummaryRow);
+        Log::Debug("Request summary-row\n");
+
+        if(Config::asymmetric_prior && iter % Config::learn_alpha_every == 0)
+        {
+            // Request topic-frequency-table
+            RequestTable(kTopicFrequencyTable);
+            Log::Debug("Request topic-frequency-table\n");
+            // Request doc-length-row
+            RequestTable(kDocLengthRow);
+            Log::Debug("Request doc-length-row\n");
+        }
     }
 } // namespace lightlda
 } // namespace multiverso

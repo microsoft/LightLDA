@@ -31,8 +31,8 @@ namespace multiverso { namespace lightlda
     {
         typedef DoubleBuffer<DataBlock> DataBuffer;
     public:
-        DiskDataStream(int32_t num_blocks, std::string data_path,
-            int32_t num_iterations);
+        DiskDataStream(std::string data_path,
+            int32_t num_blocks, int32_t num_iterations);
         virtual ~DiskDataStream();
         virtual void BeforeDataAccess() override;
         virtual void EndDataAccess() override;
@@ -46,12 +46,12 @@ namespace multiverso { namespace lightlda
         DataBuffer* data_buffer_;
         /*! \brief current block id to be accessed */
         int32_t block_id_;
+        /*! \brief data path */
+        std::string data_path_;
         /*! \brief number of data blocks in disk */
         int32_t num_blocks_;
         /*! \brief number of training iterations */
         int32_t num_iterations_;
-        /*! \brief data path */
-        std::string data_path_;
         /*! \brief backend thread for data preload */
         std::thread preload_thread_;
         bool working_;
@@ -95,9 +95,9 @@ namespace multiverso { namespace lightlda
         return *data_buffer_[index_];
     }
 
-    DiskDataStream::DiskDataStream(int32_t num_blocks,
-        std::string data_path, int32_t num_iterations) :
-        num_blocks_(num_blocks), data_path_(data_path),
+    DiskDataStream::DiskDataStream(std::string data_path,
+        int32_t num_blocks, int32_t num_iterations) :
+        data_path_(data_path), num_blocks_(num_blocks),
         num_iterations_(num_iterations), working_(false)
     {
         block_id_ = 0;
@@ -178,7 +178,7 @@ namespace multiverso { namespace lightlda
     {
         if (Config::out_of_core && Config::num_blocks != 1)
         {
-            return new DiskDataStream(Config::num_blocks, Config::input_dir,
+            return new DiskDataStream(Config::input_dir, Config::num_blocks,
                 Config::num_iterations);
         }
         else
