@@ -14,11 +14,16 @@ The highlight features of LightLDA are
 * **Fast**: The sampler can sample millions of tokens per second per multi-core node.
 * **Lightweight**: Such big tasks can be trained with as few as tens of machines.
 
+## Requirements
+
+You need to have a functional build environment in order to proceed with building lightlda. On debian this is as simple as running
+
+``` $ sudo apt-get install build-essential libzmq3-dev```
+
 ## Quick Start
 
 Run ``` $ sh build.sh ``` to build lightlda.
 Run ``` $ sh example/nytimes.sh ``` for a simple example.
-
 
 ## Reference
 
