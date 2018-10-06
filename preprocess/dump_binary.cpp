@@ -19,8 +19,8 @@ namespace lightlda
 {
     /* 
      * Output file format:
-     * 1, the first 4 byte indicates the number of docs in this block
-     * 2, the 4 * (doc_num + 1) bytes indicate the offset of reach doc
+     * 1, the first 8 byte indicates the number of docs in this block
+     * 2, the 8 * (doc_num + 1) bytes indicate the offset of reach doc
      * an example
      * 3    // there are 3 docs in this block
      * 0    // the offset of the 1-st doc
