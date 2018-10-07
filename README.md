@@ -10,9 +10,9 @@ For documents, please view our website [http://www.dmtk.io](http://www.dmtk.io).
 
 The highlight features of LightLDA are
 
-* **Scalable**: LightLDA can train models with trillions of parameters on big data with billions of documents, a scale previous implementations cann't handle. 
+* **Scalable**: LightLDA can train models with trillions of parameters on big data with billions of documents, a scale previous implementations can't handle. 
 * **Fast**: The sampler can sample millions of tokens per second per multi-core node.
-* **Lightweight**: Such big tasks can be trained with as few as tens of machines.
+* **Lightweight**: Such large tasks can be completed with as few as tens of machines.
 
 ## Quick Start
 
