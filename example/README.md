@@ -42,7 +42,7 @@ For data capacity, you should assign a value at least larger than the largest si
 
 For ```model/alias/delta capacity```, you can assign any value. LightLDA handles big model challenge under limited memory condition by model scheduling, which loads only a slice of needed parameters that can fit into the pre-allocated memory and schedules only related tokens to train. To reduce the wait time, the next slice is prefetched in the background. Empirically, ```model capacity``` and ```alias capacity``` are in same order. ```delta capacity``` can be much smaller than model/alias capacity. Logs will gives the actually memory size used at the beggning of program. You can use this information to adjust these arguments to achieve better computation/memory efficiency.
 
-#Note on distirubted running
+#Note on distributed running
 
 Data should be distributed into different nodes. 
 
