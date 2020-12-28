@@ -457,7 +457,7 @@ int main(int argc, char* argv[])
     char *endptr = nullptr;
     const int kBASE = 10;
     int doc_buf_idx;
-
+    int32_t max_id = 0;
     double dump_start = get_time();
 
     offset_buf[0] = 0;
@@ -518,6 +518,7 @@ int main(int argc, char* argv[])
         }
         // The input data may be already sorted
         std::sort(doc_tokens.begin(), doc_tokens.end(), Compare);
+        max_id = std::max(max_id, (doc_tokens.end()-1)->word_id);
 
         doc_buf_idx = 0;
         doc_buf[doc_buf_idx++] = 0; // cursor
@@ -538,8 +539,10 @@ int main(int argc, char* argv[])
     vocab_file.write(reinterpret_cast<char*>(&vocab_size), sizeof(int32_t));
 
     int32_t non_zero_count = 0;
+    std::cout << "Max word id is: " << max_id << std::endl;
+    ++max_id;
     // write vocab
-    for (int i = 0; i < word_num; ++i)
+    for (int i = 0; i < max_id; ++i)
     {
         if (local_tf_map[i] > 0)
         {
@@ -551,7 +554,7 @@ int main(int argc, char* argv[])
     std::cout << "Local vocab_size for the output block is: " << non_zero_count << std::endl;
 
     // write global tf
-    for (int i = 0; i < word_num; ++i)
+    for (int i = 0; i < max_id; ++i)
     {
         if (local_tf_map[i] > 0)
         {
@@ -559,7 +562,7 @@ int main(int argc, char* argv[])
         }
     }
     // write local tf
-    for (int i = 0; i < word_num; ++i)
+    for (int i = 0; i < max_id; ++i)
     {
         if (local_tf_map[i] > 0)
         {
@@ -571,7 +574,7 @@ int main(int argc, char* argv[])
     vocab_file.close();
 
     txt_vocab_file << non_zero_count << std::endl;
-    for (int i = 0; i < word_num; ++i)
+    for (int i = 0; i < max_id; ++i)
     {
         if (local_tf_map[i] > 0)
         {
